@@ -1,1 +1,933 @@
+<!DOCTYPE html>
+<!-- MMC Pathology — QC Dashboard. Single-file, no build step, no backend. Deploy by pushing to a GitHub repo and enabling Pages. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MMC Pathology — QC Dashboard</title>
+<style>
+:root {
+  --ink: #171B1E;
+  --muted: #5B6670;
+  --paper: #F3F5F4;
+  --panel: #FFFFFF;
+  --line: #D8DEDC;
+  --brand: #0C6E62;
+  --brand-deep: #084F46;
+  --ok: #2E7D32;
+  --ok-tint: #E5F3E3;
+  --warning: #B8790E;
+  --warning-tint: #FBF1D2;
+  --reject: #B23A32;
+  --reject-tint: #FBE1DD;
+  --band-green: #DCEEDA;
+  --band-yellow: #FBF0D0;
+  --band-red: #F8DAD5;
+  --band-outer: #E7E9EA;
+  --grid-line: #C7CDCB;
+  --line-color: #33474A;
+  --point-normal: #1B2A3A;
+  --select-outline: #0C6E62;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-num: "SF Mono", "Cascadia Code", Consolas, "Roboto Mono", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size:15px; line-height:1.45; }
+h1, h2 { font-weight:600; letter-spacing:-0.01em; margin:0 0 .6rem; }
+h1 { font-size:1.35rem; }
+h2 { font-size:1.02rem; }
+p { margin: .3rem 0 .8rem; }
+.muted { color: var(--muted); font-weight:400; }
+.num, td.num, .li-row strong { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+a { color: var(--brand-deep); }
 
+button { font-family: inherit; font-size:.83rem; cursor:pointer; border:1px solid var(--line); background: var(--panel); color: var(--ink); border-radius:5px; padding:.42rem .75rem; transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
+button:hover { border-color: var(--brand); color: var(--brand-deep); }
+button.active { background: var(--brand); border-color: var(--brand); color:#fff; }
+button.danger { color: var(--reject); }
+button.danger:hover { border-color: var(--reject); color: var(--reject); }
+button.small { padding:.22rem .55rem; font-size:.75rem; }
+button:disabled { opacity:.4; cursor:not-allowed; }
+input, select { font-family: inherit; font-size:.83rem; padding:.38rem .55rem; border:1px solid var(--line); border-radius:5px; background:#fff; color: var(--ink); }
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--brand); outline-offset:1px; }
+label { font-size:.78rem; color: var(--muted); display:flex; flex-direction:column; gap:.2rem; }
+
+.topbar { display:flex; align-items:center; gap:1.3rem; background: var(--brand); color:#fff; padding:.65rem 1.25rem; flex-wrap:wrap; }
+.brand { font-weight:600; letter-spacing:-0.01em; white-space:nowrap; }
+.tabs, .utility { display:flex; gap:.35rem; flex-wrap:wrap; }
+.tabs button, .utility button { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.28); color:#fff; }
+.tabs button:hover, .utility button:hover { background: rgba(255,255,255,.18); color:#fff; border-color:#fff; }
+.tabs button.active { background:#fff; color: var(--brand-deep); border-color:#fff; }
+.utility { margin-left:auto; }
+
+main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
+
+.demo-note { background: var(--panel); border:1px solid var(--line); border-left:3px solid var(--brand); border-radius:4px; padding:.55rem .8rem; font-size:.83rem; }
+
+.inst-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:.9rem; }
+.inst-card { display:flex; align-items:stretch; width:100%; text-align:left; border:1px solid var(--line); border-radius:6px; background: var(--panel); overflow:hidden; padding:0; font:inherit; color:inherit; }
+.inst-card:hover { border-color: var(--brand); }
+.inst-card-bar { display:block; width:6px; flex-shrink:0; }
+.status-ok .inst-card-bar { background: var(--ok); }
+.status-warning .inst-card-bar { background: var(--warning); }
+.status-reject .inst-card-bar { background: var(--reject); }
+.inst-card-body { display:flex; flex-direction:column; padding:.85rem 1rem; gap:.15rem; }
+.inst-card-name { font-weight:600; }
+.inst-card-serial { color: var(--muted); font-family: var(--font-num); font-size:.78rem; }
+.inst-card-status { margin-top:.4rem; font-weight:600; font-size:.83rem; }
+.status-ok .inst-card-status { color: var(--ok); }
+.status-warning .inst-card-status { color: var(--warning); }
+.status-reject .inst-card-status { color: var(--reject); }
+.inst-card-count { color: var(--muted); font-size:.76rem; }
+
+.inst-selector, .assay-tabs { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.7rem; }
+.chip { border-radius:999px; font-size:.8rem; }
+.chip-serial { font-family: var(--font-num); opacity:.7; margin-left:.3rem; font-size:.75rem; }
+.tab { border-radius:0; border:none; border-bottom:2px solid transparent; background:none; padding:.4rem .2rem; margin-right:.9rem; }
+.tab:hover { border-color: var(--line); color: var(--brand-deep); }
+.tab.active { color: var(--brand-deep); border-bottom-color: var(--brand); font-weight:600; }
+.assay-title { margin-top:.2rem; }
+
+.level-panel { display:grid; grid-template-columns:190px 1fr; gap:1.1rem; border:1px solid var(--line); border-radius:6px; background: var(--panel); padding:1rem; margin-bottom:.55rem; }
+.level-info { display:flex; flex-direction:column; gap:.4rem; border-right:1px solid var(--line); padding-right:1rem; }
+.li-row { display:flex; justify-content:space-between; gap:.5rem; font-size:.79rem; }
+.li-row span:first-child { color: var(--muted); }
+.lj-svg { width:100%; height:auto; display:block; aspect-ratio: 900 / 220; }
+.lj-axis-label { font-family: var(--font-num); font-size:9px; fill: var(--muted); }
+.band-outer { fill: var(--band-outer); }
+.band-red { fill: var(--band-red); }
+.band-yellow { fill: var(--band-yellow); }
+.band-green { fill: var(--band-green); }
+.grid-line { stroke: var(--grid-line); stroke-width:1; }
+.lj-line { stroke: var(--line-color); stroke-width:1.4; fill:none; }
+.lj-dot { stroke:#fff; stroke-width:1; cursor:pointer; }
+.lj-hit { fill:transparent; cursor:pointer; }
+.dot-normal { fill: var(--point-normal); }
+.dot-warning { fill: var(--warning); }
+.dot-reject { fill: var(--reject); }
+.select-box { fill:none; stroke: var(--select-outline); stroke-width:2; }
+.chart-footer { display:flex; align-items:center; gap:.6rem; margin-top:.5rem; min-height:1.6rem; }
+.detail-readout { font-size:.82rem; flex:1; }
+.flag-pill { display:inline-block; font-size:.72rem; font-weight:600; border-radius:3px; padding:.06rem .42rem; margin-left:.3rem; }
+.flag-pill.sev-warning { background: var(--warning-tint); color: var(--warning); }
+.flag-pill.sev-reject { background: var(--reject-tint); color: var(--reject); }
+.flag-pill.sev-ok { background: var(--ok-tint); color: var(--ok); }
+.quick-add { display:flex; align-items:flex-end; gap:.6rem; margin-top:.65rem; padding-top:.6rem; border-top:1px dashed var(--line); flex-wrap:wrap; }
+.empty-chart { padding:2.2rem 1rem; text-align:center; color: var(--muted); background: var(--band-outer); border-radius:4px; font-size:.85rem; }
+.empty-hint { color: var(--muted); }
+
+.violation-mini { border:1px solid var(--line); border-left:3px solid var(--reject); border-radius:4px; padding:.55rem .85rem; margin-bottom:1rem; font-size:.81rem; background:#fff; }
+.violation-mini ul { margin:.35rem 0 0; padding-left:1.1rem; }
+.violation-mini li { margin-bottom:.1rem; }
+
+.v-controls { display:flex; gap:1.1rem; align-items:flex-end; margin-bottom:.8rem; }
+.v-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+.v-table th, .v-table td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); font-size:.81rem; }
+.v-table th { background: var(--paper); font-weight:600; }
+.sev-row-reject td { background: var(--reject-tint); }
+.sev-row-warning td { background: var(--warning-tint); }
+
+.settings-card { border:1px solid var(--line); border-radius:6px; background:#fff; padding:1.05rem 1.15rem; margin-bottom:1.1rem; }
+.rule-grid { display:flex; flex-wrap:wrap; gap:.55rem 1.5rem; margin-top:.5rem; }
+.rule-toggle { flex-direction:row; align-items:center; gap:.4rem; font-size:.84rem; color: var(--ink); }
+.data-actions { display:flex; gap:.6rem; flex-wrap:wrap; margin:.5rem 0 .3rem; }
+.instrument-settings { border-top:1px solid var(--line); padding-top:.9rem; margin-top:.9rem; }
+.instrument-settings:first-of-type { border-top:none; padding-top:0; margin-top:0; }
+.instrument-settings-head { display:flex; gap:.5rem; margin-bottom:.65rem; flex-wrap:wrap; }
+.instrument-settings-head input { flex:1; min-width:160px; }
+.assay-settings { border:1px dashed var(--line); border-radius:5px; padding:.75rem; margin:.65rem 0; }
+.assay-settings-head { display:flex; gap:.5rem; margin-bottom:.55rem; align-items:center; flex-wrap:wrap; }
+.assay-settings-head input { min-width:120px; }
+.level-settings-row { display:flex; gap:.6rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:.45rem; }
+.level-settings-row > span:first-child { font-weight:600; align-self:center; min-width:1.4rem; }
+.level-settings-row input { max-width:130px; }
+.points-table-wrap { max-height:150px; overflow-y:auto; border:1px solid var(--line); border-radius:4px; margin:.3rem 0 .8rem; }
+.points-table { width:100%; border-collapse:collapse; font-size:.77rem; }
+.points-table th, .points-table td { padding:.28rem .55rem; border-bottom:1px solid var(--line); text-align:left; }
+.add-instrument-form, .add-assay-form { display:flex; gap:.55rem; margin-top:.7rem; flex-wrap:wrap; }
+
+@media print {
+  .no-print { display:none !important; }
+  body { background:#fff; }
+  main.view { max-width:none; padding:0; }
+  .level-panel { break-inside:avoid; border-color:#999; }
+  .inst-card { break-inside:avoid; }
+}
+@media (max-width:720px) {
+  .level-panel { grid-template-columns:1fr; }
+  .level-info { border-right:none; border-bottom:1px solid var(--line); padding-right:0; padding-bottom:.6rem; flex-direction:row; flex-wrap:wrap; }
+  .li-row { flex:1 1 45%; justify-content:flex-start; gap:.3rem; }
+  main.view { padding:1rem; }
+  .topbar { padding:.6rem .9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition:none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+
+/* ---------- helpers ---------- */
+function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+function esc(s) { return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtNum(n) { return (typeof n==='number' && isFinite(n)) ? n.toFixed(2) : '—'; }
+function fmtDateTime(dt) {
+  if (!dt) return '—';
+  const d = new Date(dt);
+  if (isNaN(d.getTime())) return dt;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function nowLocalInputValue() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function clampZ(z) { if (z==null) return 0; return Math.max(-3.45, Math.min(3.45, z)); }
+function worstSeverity(flags) {
+  if (!flags || !flags.length) return 'none';
+  return flags.some(f=>f.severity==='reject') ? 'reject' : 'warning';
+}
+function statusLabel(s) { return s==='reject' ? 'Reject — rule violated' : s==='warning' ? 'Warning' : 'In control'; }
+function safeFilename(s) { return String(s).replace(/[^\w\-]+/g,'_'); }
+
+/* ---------- seed data ---------- */
+const SEED_DATA = { instruments: [
+  { id:'easylyte-58692', name:'EasyLyte Plus', serial:'58692-CNKC', assays: [
+    { name:'Na+', unit:'mmol/L', levels: [
+      { level:1, controlName:'Electrolyte Control', controlLot:'DEMO-LOT-01', expDate:'2027-12-31', mean:120.0, sd:1.5, points: [
+        {id:uid(), datetime:'2026-08-15T09:10', value:119.8},
+        {id:uid(), datetime:'2026-08-17T09:05', value:120.3},
+        {id:uid(), datetime:'2026-08-19T09:12', value:119.5},
+        {id:uid(), datetime:'2026-08-21T09:08', value:120.6},
+        {id:uid(), datetime:'2026-08-23T09:15', value:119.9},
+        {id:uid(), datetime:'2026-08-25T09:02', value:120.8},
+        {id:uid(), datetime:'2026-08-27T09:11', value:119.6},
+        {id:uid(), datetime:'2026-08-29T09:07', value:120.4},
+        {id:uid(), datetime:'2026-08-31T09:09', value:120.0},
+        {id:uid(), datetime:'2026-09-02T09:06', value:119.7},
+        {id:uid(), datetime:'2026-09-04T09:13', value:121.9},
+        {id:uid(), datetime:'2026-09-06T09:04', value:122.1},
+        {id:uid(), datetime:'2026-09-08T09:10', value:121.7},
+        {id:uid(), datetime:'2026-09-09T09:08', value:122.0},
+        {id:uid(), datetime:'2026-09-10T10:02', value:124.9},
+        {id:uid(), datetime:'2026-09-11T09:05', value:120.2},
+        {id:uid(), datetime:'2026-09-12T09:09', value:119.9}
+      ]},
+      { level:2, controlName:'Electrolyte Control', controlLot:'DEMO-LOT-01', expDate:'2027-12-31', mean:150.0, sd:2.0, points: [
+        {id:uid(), datetime:'2026-08-15T09:10', value:149.5},
+        {id:uid(), datetime:'2026-08-17T09:05', value:150.8},
+        {id:uid(), datetime:'2026-08-19T09:12', value:149.2},
+        {id:uid(), datetime:'2026-08-21T09:08', value:151.0},
+        {id:uid(), datetime:'2026-08-23T09:15', value:149.8},
+        {id:uid(), datetime:'2026-08-25T09:02', value:150.5},
+        {id:uid(), datetime:'2026-08-27T09:11', value:148.9},
+        {id:uid(), datetime:'2026-08-29T09:07', value:150.2},
+        {id:uid(), datetime:'2026-08-31T09:09', value:149.6},
+        {id:uid(), datetime:'2026-09-02T09:06', value:150.9},
+        {id:uid(), datetime:'2026-09-04T09:13', value:151.2},
+        {id:uid(), datetime:'2026-09-06T09:04', value:150.4},
+        {id:uid(), datetime:'2026-09-08T09:10', value:149.9},
+        {id:uid(), datetime:'2026-09-09T09:08', value:154.3},
+        {id:uid(), datetime:'2026-09-10T10:02', value:150.6},
+        {id:uid(), datetime:'2026-09-11T09:05', value:150.1},
+        {id:uid(), datetime:'2026-09-12T09:09', value:149.7}
+      ]}
+    ]},
+    { name:'K+', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
+    ]},
+    { name:'Cl-', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
+    ]}
+  ]},
+  { id:'easylyte-65711', name:'EasyLyte Plus', serial:'65711-CNKC', assays: [
+    { name:'Na+', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:120.0, sd:1.5, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:150.0, sd:2.0, points: [] }
+    ]},
+    { name:'K+', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
+    ]},
+    { name:'Cl-', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
+    ]}
+  ]},
+  { id:'easylyte-65955', name:'EasyLyte Plus', serial:'65955-CNKC', assays: [
+    { name:'Na+', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:120.0, sd:1.5, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:150.0, sd:2.0, points: [] }
+    ]},
+    { name:'K+', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
+    ]},
+    { name:'Cl-', unit:'mmol/L', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
+    ]}
+  ]},
+  { id:'sysmex-ca600', name:'Sysmex Coagulation Analyzer CA-600', serial:'CA-620-12250', assays: [
+    { name:'PT', unit:'sec', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:13.0, sd:0.5, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:24.0, sd:1.0, points: [] }
+    ]},
+    { name:'APTT', unit:'sec', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:30.0, sd:1.2, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:60.0, sd:2.5, points: [] }
+    ]},
+    { name:'Fibrinogen', unit:'mg/dL', levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:250, sd:15, points: [] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:100, sd:10, points: [] }
+    ]}
+  ]}
+]};
+
+const DEFAULT_RULES = { r12s:true, r13s:true, r22s:true, r4s:true, r41s:true, rNx:true, rNxN:10, r7t:true };
+
+/* ---------- state ---------- */
+let state = { view:'overview', activeInstrumentId:null, activeAssayIndex:0, selected:null, violationFilter:'', violationSort:'desc', data:null, rules:null };
+
+function loadState() {
+  let data=null, rules=null;
+  try {
+    const d = localStorage.getItem('mmc_qc_data_v1');
+    if (d) data = JSON.parse(d);
+    const r = localStorage.getItem('mmc_qc_rules_v1');
+    if (r) rules = JSON.parse(r);
+  } catch(e) { console.warn('Could not read saved QC data', e); }
+  state.data = (data && Array.isArray(data.instruments)) ? data : JSON.parse(JSON.stringify(SEED_DATA));
+  state.rules = rules || Object.assign({}, DEFAULT_RULES);
+}
+function saveState() {
+  try {
+    localStorage.setItem('mmc_qc_data_v1', JSON.stringify(state.data));
+    localStorage.setItem('mmc_qc_rules_v1', JSON.stringify(state.rules));
+  } catch(e) { console.warn('Could not save QC data', e); }
+}
+function renderAndSave() { saveState(); render(); }
+
+function hasDemoData() {
+  const inst = state.data.instruments[0];
+  const lvl = inst && inst.assays[0] && inst.assays[0].levels[0];
+  return !!(lvl && lvl.controlLot === 'DEMO-LOT-01' && lvl.points.length > 0);
+}
+
+/* ---------- Westgard engine ---------- */
+function evaluateLevel(points, mean, sd, rules) {
+  if (!sd) return points.map(p => Object.assign({}, p, { z:null, flags:[] }));
+  const zs = points.map(p => Object.assign({}, p, { z:(p.value-mean)/sd, flags:[] }));
+  for (let i=0;i<zs.length;i++) {
+    const z = zs[i].z;
+    if (rules.r13s && Math.abs(z) > 3) zs[i].flags.push({rule:'1-3s', severity:'reject'});
+    else if (rules.r12s && Math.abs(z) > 2) zs[i].flags.push({rule:'1-2s', severity:'warning'});
+
+    if (rules.r22s && i>=1) {
+      if (z>2 && zs[i-1].z>2) zs[i].flags.push({rule:'2-2s', severity:'reject'});
+      if (z<-2 && zs[i-1].z<-2) zs[i].flags.push({rule:'2-2s', severity:'reject'});
+    }
+    if (rules.r41s && i>=3) {
+      const w = [zs[i-3].z, zs[i-2].z, zs[i-1].z, z];
+      if (w.every(v=>v>1)) zs[i].flags.push({rule:'4-1s', severity:'reject'});
+      if (w.every(v=>v<-1)) zs[i].flags.push({rule:'4-1s', severity:'reject'});
+    }
+    if (rules.rNx) {
+      const N = rules.rNxN || 10;
+      if (i >= N-1) {
+        const w = zs.slice(i-N+1, i+1).map(p=>p.z);
+        if (w.every(v=>v>0)) zs[i].flags.push({rule:N+'-x', severity:'reject'});
+        if (w.every(v=>v<0)) zs[i].flags.push({rule:N+'-x', severity:'reject'});
+      }
+    }
+    if (rules.r7t && i>=6) {
+      const w = zs.slice(i-6, i+1).map(p=>p.value);
+      let inc=true, dec=true;
+      for (let k=1;k<w.length;k++) { if (!(w[k]>w[k-1])) inc=false; if (!(w[k]<w[k-1])) dec=false; }
+      if (inc||dec) zs[i].flags.push({rule:'7-T', severity:'reject'});
+    }
+  }
+  return zs;
+}
+
+function evaluateWithinRun(levels, rules) {
+  const byDate = {};
+  levels.forEach((lvl, li) => {
+    if (!lvl.sd) return;
+    lvl.points.forEach((p, pi) => {
+      const d = (p.datetime||'').slice(0,10);
+      if (!d) return;
+      (byDate[d] = byDate[d] || []).push({ levelIndex:li, pointIndex:pi, z:(p.value-lvl.mean)/lvl.sd });
+    });
+  });
+  const flags = [];
+  Object.values(byDate).forEach(entries => {
+    if (entries.length < 2) return;
+    if (rules.r4s) {
+      let maxE=entries[0], minE=entries[0];
+      entries.forEach(e => { if (e.z>maxE.z) maxE=e; if (e.z<minE.z) minE=e; });
+      if (maxE.z - minE.z > 4) {
+        flags.push({levelIndex:maxE.levelIndex, pointIndex:maxE.pointIndex, rule:'R-4s', severity:'reject'});
+        flags.push({levelIndex:minE.levelIndex, pointIndex:minE.pointIndex, rule:'R-4s', severity:'reject'});
+      }
+    }
+    if (rules.r22s) {
+      for (let a=0;a<entries.length;a++) {
+        for (let b=a+1;b<entries.length;b++) {
+          if ((entries[a].z>2 && entries[b].z>2) || (entries[a].z<-2 && entries[b].z<-2)) {
+            flags.push({levelIndex:entries[a].levelIndex, pointIndex:entries[a].pointIndex, rule:'2-2s (within-run)', severity:'reject'});
+            flags.push({levelIndex:entries[b].levelIndex, pointIndex:entries[b].pointIndex, rule:'2-2s (within-run)', severity:'reject'});
+          }
+        }
+      }
+    }
+  });
+  return flags;
+}
+
+function getEvaluatedAssay(inst, assayIndex) {
+  const assay = inst.assays[assayIndex];
+  const sortedLevels = assay.levels.map(lvl => Object.assign({}, lvl, {
+    points: lvl.points.slice().sort((a,b)=> a.datetime.localeCompare(b.datetime))
+  }));
+  const evalLevels = sortedLevels.map(lvl => Object.assign({}, lvl, { points: evaluateLevel(lvl.points, lvl.mean, lvl.sd, state.rules) }));
+  const runFlags = evaluateWithinRun(sortedLevels, state.rules);
+  runFlags.forEach(f => {
+    const pt = evalLevels[f.levelIndex] && evalLevels[f.levelIndex].points[f.pointIndex];
+    if (pt) pt.flags.push({ rule:f.rule, severity:f.severity });
+  });
+  return evalLevels;
+}
+
+function instrumentSummary(inst) {
+  let status = 'ok', count = 0;
+  inst.assays.forEach((assay, ai) => {
+    const evalLevels = getEvaluatedAssay(inst, ai);
+    evalLevels.forEach(lvl => {
+      lvl.points.forEach((p, pi) => {
+        if (p.flags.length) {
+          count += p.flags.length;
+          if (pi === lvl.points.length-1) {
+            const worst = worstSeverity(p.flags);
+            if (worst==='reject') status='reject';
+            else if (worst==='warning' && status!=='reject') status='warning';
+          }
+        }
+      });
+    });
+  });
+  return { status, count };
+}
+
+/* ---------- chart ---------- */
+function buildChartSVG(key, offset, visiblePoints, selGlobalIndex) {
+  const W=900, H=220, padL=42, padR=14, padT=10, padB=10;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const yFor = z => padT + (3.5-z)/7*plotH;
+  const n = visiblePoints.length;
+  const xFor = i => n<=1 ? padL+plotW/2 : padL + (i/(n-1))*plotW;
+
+  const bands = [
+    [3,3.5,'band-outer'], [2,3,'band-red'], [1,2,'band-yellow'],
+    [-1,1,'band-green'], [-2,-1,'band-yellow'], [-3,-2,'band-red'], [-3.5,-3,'band-outer']
+  ];
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="lj-svg" preserveAspectRatio="xMidYMid meet">`;
+  bands.forEach(b => {
+    const lo=b[0], hi=b[1], cls=b[2];
+    const y1=yFor(hi), y2=yFor(lo);
+    s += `<rect x="${padL}" y="${y1.toFixed(1)}" width="${plotW}" height="${(y2-y1).toFixed(1)}" class="${cls}"></rect>`;
+  });
+  [-3,-2,-1,0,1,2,3].forEach(z => {
+    const y = yFor(z);
+    s += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" class="grid-line"></line>`;
+    const label = z===0 ? 'Mean' : (z>0 ? '+'+z+'SD' : z+'SD');
+    s += `<text x="${padL-5}" y="${(y+3).toFixed(1)}" text-anchor="end" class="lj-axis-label">${label}</text>`;
+  });
+  if (n>1) {
+    const pts = visiblePoints.map((p,i)=>`${xFor(i).toFixed(1)},${yFor(clampZ(p.z)).toFixed(1)}`).join(' ');
+    s += `<polyline points="${pts}" class="lj-line"></polyline>`;
+  }
+  visiblePoints.forEach((p,i) => {
+    const x=xFor(i), y=yFor(clampZ(p.z));
+    const gi = offset+i;
+    const sev = worstSeverity(p.flags);
+    const dotCls = sev==='reject' ? 'dot-reject' : sev==='warning' ? 'dot-warning' : 'dot-normal';
+    if (gi===selGlobalIndex) {
+      s += `<rect x="${(x-8).toFixed(1)}" y="${(y-8).toFixed(1)}" width="16" height="16" class="select-box"></rect>`;
+    }
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" class="lj-hit" data-action="select-point" data-key="${key}" data-point-index="${gi}"></circle>`;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" class="lj-dot ${dotCls}" data-action="select-point" data-key="${key}" data-point-index="${gi}"></circle>`;
+  });
+  s += `</svg>`;
+  return s;
+}
+
+/* ---------- render ---------- */
+function render() {
+  document.getElementById('app').innerHTML = renderShell();
+}
+
+function renderShell() {
+  return `
+    <header class="topbar no-print">
+      <div class="brand">MMC Pathology — QC Dashboard</div>
+      <nav class="tabs">
+        <button data-action="set-view" data-view="overview" class="${state.view==='overview'?'active':''}">Overview</button>
+        <button data-action="set-view" data-view="instrument" class="${state.view==='instrument'?'active':''}">Instruments</button>
+        <button data-action="set-view" data-view="violations" class="${state.view==='violations'?'active':''}">Violations log</button>
+        <button data-action="set-view" data-view="settings" class="${state.view==='settings'?'active':''}">Settings</button>
+      </nav>
+      <div class="utility">
+        <button data-action="export-json">Export data</button>
+        <button data-action="trigger-import">Import data</button>
+        <button data-action="print-view">Print</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none">
+      </div>
+    </header>
+    <main class="view">
+      ${state.view==='overview' ? renderOverview()
+        : state.view==='instrument' ? renderInstrumentView()
+        : state.view==='violations' ? renderViolationsView()
+        : renderSettingsView()}
+    </main>`;
+}
+
+function renderOverview() {
+  if (!state.data.instruments.length) {
+    return `<section><h1>Instrument overview</h1><p class="empty-hint">No instruments yet — add one in Settings.</p></section>`;
+  }
+  const cards = state.data.instruments.map(inst => {
+    const sum = instrumentSummary(inst);
+    return `
+      <button class="inst-card status-${sum.status}" data-action="open-instrument" data-instrument="${inst.id}">
+        <span class="inst-card-bar"></span>
+        <span class="inst-card-body">
+          <span class="inst-card-name">${esc(inst.name)}</span>
+          <span class="inst-card-serial">S/N ${esc(inst.serial)}</span>
+          <span class="inst-card-status">${statusLabel(sum.status)}</span>
+          <span class="inst-card-count">${sum.count} flagged result${sum.count===1?'':'s'} on record</span>
+        </span>
+      </button>`;
+  }).join('');
+  return `
+    <section class="overview">
+      <h1>Instrument overview</h1>
+      ${hasDemoData() ? `<p class="demo-note">Example Na+ results are loaded on the first EasyLyte Plus (58692-CNKC) so you can see the charts and rule engine working. Clear them anytime from Settings &rarr; Clear all QC results.</p>` : ''}
+      <div class="inst-grid">${cards}</div>
+    </section>`;
+}
+
+function renderInstrumentView() {
+  if (!state.data.instruments.length) {
+    return `<section><h1>Instruments</h1><p class="empty-hint">No instruments yet — add one in Settings.</p></section>`;
+  }
+  if (!state.activeInstrumentId || !state.data.instruments.find(i=>i.id===state.activeInstrumentId)) {
+    state.activeInstrumentId = state.data.instruments[0].id;
+  }
+  const inst = state.data.instruments.find(i=>i.id===state.activeInstrumentId);
+  const instSelector = state.data.instruments.map(i =>
+    `<button data-action="select-instrument" data-instrument="${i.id}" class="chip ${i.id===inst.id?'active':''}">${esc(i.name)}<span class="chip-serial">${esc(i.serial)}</span></button>`
+  ).join('');
+
+  if (state.activeAssayIndex >= inst.assays.length) state.activeAssayIndex = 0;
+  const assayTabs = inst.assays.map((a,idx) =>
+    `<button data-action="select-assay" data-assay="${idx}" class="tab ${idx===state.activeAssayIndex?'active':''}">${esc(a.name)}</button>`
+  ).join('');
+
+  const assay = inst.assays[state.activeAssayIndex];
+  const evalLevels = assay ? getEvaluatedAssay(inst, state.activeAssayIndex) : [];
+  const levelPanels = evalLevels.map(lvl => renderLevelPanel(inst, state.activeAssayIndex, lvl, assay.unit||'')).join('');
+
+  return `
+    <section class="instrument-view">
+      <div class="inst-selector no-print">${instSelector}</div>
+      <h1>${esc(inst.name)} <span class="muted">S/N ${esc(inst.serial)}</span></h1>
+      ${inst.assays.length ? `<div class="assay-tabs no-print">${assayTabs}</div>` : ''}
+      ${assay ? `<h2 class="assay-title">${esc(assay.name)} ${assay.unit?`<span class="muted">(${esc(assay.unit)})</span>`:''}</h2>` : ''}
+      ${assay ? levelPanels : '<p class="empty-hint">No assays configured for this instrument yet — add one in Settings.</p>'}
+    </section>`;
+}
+
+function renderLevelPanel(inst, assayIndex, lvl, unit) {
+  const key = inst.id + '|' + assayIndex + '|' + lvl.level;
+  const sel = (state.selected && state.selected.key===key) ? state.selected.pointIndex : null;
+  const points = lvl.points;
+  const WINDOW = 25;
+  const offset = Math.max(0, points.length - WINDOW);
+  const visible = points.slice(offset);
+  const rangeLo = fmtNum(lvl.mean - 2*lvl.sd);
+  const rangeHi = fmtNum(lvl.mean + 2*lvl.sd);
+  const selPoint = (sel!=null && points[sel]) ? points[sel] : null;
+  const violations = points.filter(p => p.flags && p.flags.length);
+  const chartHtml = lvl.sd ? buildChartSVG(key, offset, visible, sel) : `<div class="empty-chart">Set a mean and SD for this level in Settings to start plotting.</div>`;
+
+  return `
+  <div class="level-panel">
+    <div class="level-info">
+      <div class="li-row"><span>Level</span><strong>${lvl.level}</strong></div>
+      <div class="li-row"><span>Control</span><strong>${esc(lvl.controlName||'—')}</strong></div>
+      <div class="li-row"><span>Lot</span><strong>${esc(lvl.controlLot||'—')}</strong></div>
+      <div class="li-row"><span>Exp.</span><strong>${esc(lvl.expDate||'—')}</strong></div>
+      <div class="li-row"><span>N</span><strong class="num">${points.length}</strong></div>
+      <div class="li-row"><span>Mean</span><strong class="num">${fmtNum(lvl.mean)}</strong></div>
+      <div class="li-row"><span>SD</span><strong class="num">${fmtNum(lvl.sd)}</strong></div>
+      <div class="li-row"><span>Range (&plusmn;2SD)</span><strong class="num">${rangeLo}&ndash;${rangeHi}</strong></div>
+    </div>
+    <div class="level-chart">
+      ${chartHtml}
+      <div class="chart-footer no-print">
+        ${selPoint ? `
+          <button data-action="step-point" data-dir="-1" ${sel<=0?'disabled':''}>&lsaquo; Prev</button>
+          <div class="detail-readout"><strong>${fmtDateTime(selPoint.datetime)}</strong> &mdash; value ${selPoint.value} ${esc(unit)}
+            ${selPoint.flags.length ? selPoint.flags.map(f=>`<span class="flag-pill sev-${f.severity}">${esc(f.rule)}</span>`).join('') : '<span class="flag-pill sev-ok">In control</span>'}
+          </div>
+          <button data-action="step-point" data-dir="1" ${sel>=points.length-1?'disabled':''}>Next &rsaquo;</button>
+        ` : `<div class="detail-readout">Click a point on the chart to see its date and value.</div>`}
+      </div>
+      <form class="quick-add no-print" data-action="quick-add" data-instrument="${inst.id}" data-assay="${assayIndex}" data-level="${lvl.level}">
+        <label>Date/time <input type="datetime-local" name="dt" value="${nowLocalInputValue()}" required></label>
+        <label>Value <input type="number" step="any" name="val" required></label>
+        <button type="submit">Add result</button>
+      </form>
+    </div>
+  </div>
+  ${violations.length ? `
+  <div class="violation-mini no-print">
+    <strong>${violations.length} flagged result${violations.length===1?'':'s'} &mdash; Level ${lvl.level}</strong>
+    <ul>${violations.map(v=>`<li>${fmtDateTime(v.datetime)} &mdash; ${v.value} &mdash; ${v.flags.map(f=>esc(f.rule)).join(', ')}</li>`).join('')}</ul>
+  </div>` : ''}
+  `;
+}
+
+function renderViolationsView() {
+  const rows = [];
+  state.data.instruments.forEach(inst => {
+    inst.assays.forEach((assay, ai) => {
+      const evalLevels = getEvaluatedAssay(inst, ai);
+      evalLevels.forEach(lvl => {
+        lvl.points.forEach(p => {
+          p.flags.forEach(f => {
+            rows.push({ date:p.datetime, instrument:inst.name, assay:assay.name, level:lvl.level, value:p.value, rule:f.rule, severity:f.severity });
+          });
+        });
+      });
+    });
+  });
+  rows.sort((a,b) => state.violationSort==='asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+  const filtered = state.violationFilter ? rows.filter(r=>r.severity===state.violationFilter) : rows;
+
+  return `
+    <section class="violations-view">
+      <h1>Violations log</h1>
+      <div class="v-controls no-print">
+        <label>Filter
+          <select data-action="filter-violations">
+            <option value="" ${!state.violationFilter?'selected':''}>All</option>
+            <option value="reject" ${state.violationFilter==='reject'?'selected':''}>Reject only</option>
+            <option value="warning" ${state.violationFilter==='warning'?'selected':''}>Warning only</option>
+          </select>
+        </label>
+        <button data-action="toggle-sort-violations">Sort: ${state.violationSort==='asc'?'Oldest first':'Newest first'}</button>
+      </div>
+      ${filtered.length ? `
+      <table class="v-table">
+        <thead><tr><th>Date</th><th>Instrument</th><th>Assay</th><th>Level</th><th>Value</th><th>Rule</th><th>Severity</th></tr></thead>
+        <tbody>
+          ${filtered.map(r=>`<tr class="sev-row-${r.severity}">
+            <td class="num">${fmtDateTime(r.date)}</td>
+            <td>${esc(r.instrument)}</td>
+            <td>${esc(r.assay)}</td>
+            <td class="num">${r.level}</td>
+            <td class="num">${r.value}</td>
+            <td>${esc(r.rule)}</td>
+            <td><span class="flag-pill sev-${r.severity}">${r.severity}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : `<p class="empty-hint">No Westgard rule violations recorded yet.</p>`}
+    </section>`;
+}
+
+function renderSettingsView() {
+  const ruleDefs = [['r12s','1-2s (warning)'],['r13s','1-3s'],['r22s','2-2s'],['r4s','R-4s'],['r41s','4-1s'],['r7t','7-T (trend)']];
+  const ruleRows = ruleDefs.map(rd => `<label class="rule-toggle"><input type="checkbox" data-action="toggle-rule" data-rule="${rd[0]}" ${state.rules[rd[0]]?'checked':''}> ${rd[1]}</label>`).join('');
+  const nRuleRow = `<label class="rule-toggle"><input type="checkbox" data-action="toggle-rule" data-rule="rNx" ${state.rules.rNx?'checked':''}> Same-side-of-mean rule, N =
+      <select data-action="set-rule-n">${[8,9,10,12].map(n=>`<option value="${n}" ${state.rules.rNxN===n?'selected':''}>${n}</option>`).join('')}</select></label>`;
+
+  const instrumentBlocks = state.data.instruments.map((inst) => renderInstrumentSettings(inst)).join('');
+
+  return `
+    <section class="settings-view">
+      <h1>Settings</h1>
+
+      <div class="settings-card">
+        <h2>Westgard rules in use</h2>
+        <p class="muted">Turn rules on or off to match your lab's multirule protocol. The same-side rule (10-x by default) is an alternate run-length &mdash; most labs use one setting, not several at once.</p>
+        <div class="rule-grid">${ruleRows}${nRuleRow}</div>
+      </div>
+
+      <div class="settings-card">
+        <h2>Data</h2>
+        <div class="data-actions">
+          <button data-action="export-json">Export all data (JSON)</button>
+          <button data-action="trigger-import">Import data (JSON)</button>
+          <button data-action="clear-all-results" class="danger">Clear all QC results</button>
+        </div>
+        <p class="muted">This dashboard has no server &mdash; <strong>Export</strong> regularly and commit the file to your GitHub repo, since clearing your browser data will otherwise clear this dashboard too.</p>
+      </div>
+
+      <div class="settings-card">
+        <h2>Instruments &amp; assays</h2>
+        ${instrumentBlocks}
+        <form class="add-instrument-form" data-action="add-instrument">
+          <input type="text" name="name" placeholder="Instrument name" required>
+          <input type="text" name="serial" placeholder="Serial number" required>
+          <button type="submit">Add instrument</button>
+        </form>
+      </div>
+    </section>`;
+}
+
+function renderInstrumentSettings(inst) {
+  const assayBlocks = inst.assays.map((assay, ai) => {
+    const levelRows = assay.levels.map(lvl => {
+      const sortedPoints = lvl.points.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime));
+      const pointRows = sortedPoints.length ? sortedPoints.map(p=>`
+          <tr><td class="num">${fmtDateTime(p.datetime)}</td><td class="num">${p.value}</td>
+          <td><button class="small danger" data-action="remove-point" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-point-id="${p.id}">Remove</button></td></tr>
+        `).join('') : `<tr><td colspan="3" class="muted">No results yet &mdash; add one from the Instruments tab.</td></tr>`;
+      return `
+        <div class="level-settings-row">
+          <span>L${lvl.level}</span>
+          <label>Control <input type="text" value="${esc(lvl.controlName||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlName"></label>
+          <label>Lot <input type="text" value="${esc(lvl.controlLot||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlLot"></label>
+          <label>Exp. <input type="date" value="${esc(lvl.expDate||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="expDate"></label>
+          <label>Mean <input type="number" step="any" value="${lvl.mean}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="mean"></label>
+          <label>SD <input type="number" step="any" value="${lvl.sd}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="sd"></label>
+          <span class="muted">${lvl.points.length} results</span>
+          <button class="small" data-action="csv-export-level" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}">CSV</button>
+        </div>
+        <div class="points-table-wrap"><table class="points-table"><thead><tr><th>Date/time</th><th>Value</th><th></th></tr></thead><tbody>${pointRows}</tbody></table></div>
+      `;
+    }).join('');
+    return `
+      <div class="assay-settings">
+        <div class="assay-settings-head">
+          <input type="text" value="${esc(assay.name)}" data-action="update-assay-field" data-instrument="${inst.id}" data-assay="${ai}" data-field="name">
+          <input type="text" value="${esc(assay.unit||'')}" placeholder="unit" data-action="update-assay-field" data-instrument="${inst.id}" data-assay="${ai}" data-field="unit">
+          <button class="small danger" data-action="remove-assay" data-instrument="${inst.id}" data-assay="${ai}">Remove assay</button>
+        </div>
+        ${levelRows}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="instrument-settings">
+      <div class="instrument-settings-head">
+        <input type="text" value="${esc(inst.name)}" data-action="update-instrument-field" data-instrument="${inst.id}" data-field="name">
+        <input type="text" value="${esc(inst.serial)}" data-action="update-instrument-field" data-instrument="${inst.id}" data-field="serial">
+        <button class="small danger" data-action="remove-instrument" data-instrument="${inst.id}">Remove instrument</button>
+      </div>
+      ${assayBlocks}
+      <form class="add-assay-form" data-action="add-assay" data-instrument="${inst.id}">
+        <input type="text" name="name" placeholder="New assay name" required>
+        <input type="text" name="unit" placeholder="unit">
+        <button type="submit">Add assay</button>
+      </form>
+    </div>`;
+}
+
+/* ---------- actions ---------- */
+function stepPoint(dir) {
+  if (!state.selected) return;
+  const parts = state.selected.key.split('|');
+  const inst = state.data.instruments.find(i=>i.id===parts[0]);
+  if (!inst) return;
+  const evalLevels = getEvaluatedAssay(inst, parseInt(parts[1],10));
+  const lvl = evalLevels.find(l=>String(l.level)===parts[2]);
+  if (!lvl) return;
+  let ni = state.selected.pointIndex + dir;
+  ni = Math.max(0, Math.min(lvl.points.length-1, ni));
+  state.selected.pointIndex = ni;
+  render();
+}
+function removePoint(instId, assayIdx, levelNum, pointId) {
+  const inst = state.data.instruments.find(i=>i.id===instId);
+  const assay = inst.assays[assayIdx];
+  const lvl = assay.levels.find(l=>l.level===levelNum);
+  lvl.points = lvl.points.filter(p=>p.id!==pointId);
+  state.selected = null;
+  renderAndSave();
+}
+function removeInstrument(instId) {
+  const inst = state.data.instruments.find(i=>i.id===instId);
+  const label = inst ? `${inst.name} (${inst.serial})` : 'this instrument';
+  if (!confirm(`Remove ${label} and all its QC data? This can't be undone.`)) return;
+  state.data.instruments = state.data.instruments.filter(i=>i.id!==instId);
+  if (state.activeInstrumentId===instId) state.activeInstrumentId=null;
+  renderAndSave();
+}
+function removeAssay(instId, assayIdx) {
+  if (!confirm("Remove this assay and all its QC data? This can't be undone.")) return;
+  const inst = state.data.instruments.find(i=>i.id===instId);
+  inst.assays.splice(assayIdx,1);
+  state.activeAssayIndex = 0;
+  renderAndSave();
+}
+function clearAllResults() {
+  if (!confirm('This removes every QC result from every instrument but keeps your instruments, assays, and mean/SD settings. Export a backup first if you want to keep the results. Continue?')) return;
+  state.data.instruments.forEach(inst=>inst.assays.forEach(assay=>assay.levels.forEach(lvl=>{ lvl.points = []; })));
+  state.selected = null;
+  renderAndSave();
+}
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `mmc-qc-data-${todayStr()}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (!parsed || !Array.isArray(parsed.instruments)) throw new Error('This file does not look like QC dashboard data.');
+      state.data = parsed;
+      state.selected = null;
+      state.activeInstrumentId = null;
+      renderAndSave();
+    } catch(err) {
+      alert('Could not import this file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function csvExportLevel(instId, assayIdx, levelNum) {
+  const inst = state.data.instruments.find(i=>i.id===instId);
+  const assay = inst.assays[assayIdx];
+  const lvl = assay.levels.find(l=>l.level===levelNum);
+  const rows = [['Date/Time','Value']];
+  lvl.points.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime)).forEach(p=>rows.push([p.datetime, p.value]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${safeFilename(inst.name)}_${safeFilename(assay.name)}_L${levelNum}_${todayStr()}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- event delegation ---------- */
+function onAppClick(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action==='set-view') { state.view = el.dataset.view; render(); }
+  else if (action==='open-instrument') { state.activeInstrumentId = el.dataset.instrument; state.view='instrument'; state.activeAssayIndex=0; state.selected=null; render(); }
+  else if (action==='select-instrument') { state.activeInstrumentId = el.dataset.instrument; state.activeAssayIndex=0; state.selected=null; render(); }
+  else if (action==='select-assay') { state.activeAssayIndex = parseInt(el.dataset.assay,10); state.selected=null; render(); }
+  else if (action==='select-point') { state.selected = { key: el.dataset.key, pointIndex: parseInt(el.dataset.pointIndex,10) }; render(); }
+  else if (action==='step-point') { stepPoint(parseInt(el.dataset.dir,10)); }
+  else if (action==='export-json') { exportJSON(); }
+  else if (action==='trigger-import') { document.getElementById('import-file').click(); }
+  else if (action==='print-view') { window.print(); }
+  else if (action==='csv-export-level') { csvExportLevel(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10)); }
+  else if (action==='remove-point') { removePoint(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10), el.dataset.pointId); }
+  else if (action==='remove-instrument') { removeInstrument(el.dataset.instrument); }
+  else if (action==='remove-assay') { removeAssay(el.dataset.instrument, parseInt(el.dataset.assay,10)); }
+  else if (action==='clear-all-results') { clearAllResults(); }
+  else if (action==='toggle-sort-violations') { state.violationSort = state.violationSort==='asc' ? 'desc' : 'asc'; render(); }
+}
+
+function onAppChange(e) {
+  const t = e.target;
+  if (t.id === 'import-file') { handleImportFile(t.files[0]); return; }
+
+  let el = t.closest('[data-action="update-level-field"]');
+  if (el) {
+    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
+    const assay = inst.assays[parseInt(el.dataset.assay,10)];
+    const lvl = assay.levels.find(l=>l.level===parseInt(el.dataset.level,10));
+    const field = el.dataset.field;
+    lvl[field] = (field==='mean'||field==='sd') ? (parseFloat(el.value)||0) : el.value;
+    renderAndSave();
+    return;
+  }
+  el = t.closest('[data-action="update-assay-field"]');
+  if (el) {
+    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
+    const assay = inst.assays[parseInt(el.dataset.assay,10)];
+    assay[el.dataset.field] = el.value;
+    renderAndSave();
+    return;
+  }
+  el = t.closest('[data-action="update-instrument-field"]');
+  if (el) {
+    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
+    inst[el.dataset.field] = el.value;
+    renderAndSave();
+    return;
+  }
+  el = t.closest('[data-action="toggle-rule"]');
+  if (el) { state.rules[el.dataset.rule] = el.checked; renderAndSave(); return; }
+  el = t.closest('[data-action="set-rule-n"]');
+  if (el) { state.rules.rNxN = parseInt(el.value,10); renderAndSave(); return; }
+  el = t.closest('[data-action="filter-violations"]');
+  if (el) { state.violationFilter = el.value; render(); return; }
+}
+
+function onAppSubmit(e) {
+  const form = e.target;
+  if (form.matches('[data-action="quick-add"]')) {
+    e.preventDefault();
+    const instId = form.dataset.instrument, assayIdx = parseInt(form.dataset.assay,10), levelNum = parseInt(form.dataset.level,10);
+    const dt = form.elements['dt'].value, val = parseFloat(form.elements['val'].value);
+    if (!dt || isNaN(val)) return;
+    const inst = state.data.instruments.find(i=>i.id===instId);
+    const assay = inst.assays[assayIdx];
+    const lvl = assay.levels.find(l=>l.level===levelNum);
+    lvl.points.push({ id: uid(), datetime: dt, value: val });
+    state.selected = null;
+    renderAndSave();
+  } else if (form.matches('[data-action="add-instrument"]')) {
+    e.preventDefault();
+    const name = form.elements['name'].value.trim(), serial = form.elements['serial'].value.trim();
+    if (!name) return;
+    state.data.instruments.push({ id: uid(), name, serial, assays: [] });
+    renderAndSave();
+  } else if (form.matches('[data-action="add-assay"]')) {
+    e.preventDefault();
+    const instId = form.dataset.instrument;
+    const name = form.elements['name'].value.trim(), unit = form.elements['unit'].value.trim();
+    if (!name) return;
+    const inst = state.data.instruments.find(i=>i.id===instId);
+    inst.assays.push({ name, unit, levels: [
+      { level:1, controlName:'', controlLot:'', expDate:'', mean:0, sd:0, points:[] },
+      { level:2, controlName:'', controlLot:'', expDate:'', mean:0, sd:0, points:[] }
+    ]});
+    renderAndSave();
+  }
+}
+
+/* ---------- init ---------- */
+document.addEventListener('DOMContentLoaded', function () {
+  loadState();
+  const app = document.getElementById('app');
+  app.addEventListener('click', onAppClick);
+  app.addEventListener('change', onAppChange);
+  app.addEventListener('submit', onAppSubmit);
+  render();
+});
+</script>
+</body>
+</html>
