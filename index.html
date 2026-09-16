@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- MMC Pathology — QC Dashboard. Single-file, no build step, no backend. Deploy by pushing to a GitHub repo and enabling Pages. -->
+<!-- MMC Pathology — QC Dashboard (schema v2). Single-file, no build step, no backend.
+     Deploy by pushing to a GitHub repo and enabling Pages, or just open the file locally. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -14,6 +15,7 @@
   --line: #D8DEDC;
   --brand: #0C6E62;
   --brand-deep: #084F46;
+  --brand-tint: #E4EFED;
   --ok: #2E7D32;
   --ok-tint: #E5F3E3;
   --warning: #B8790E;
@@ -33,9 +35,10 @@
 }
 * { box-sizing: border-box; }
 html, body { margin:0; padding:0; background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size:15px; line-height:1.45; }
-h1, h2 { font-weight:600; letter-spacing:-0.01em; margin:0 0 .6rem; }
+h1, h2, h3 { font-weight:600; letter-spacing:-0.01em; margin:0 0 .6rem; }
 h1 { font-size:1.35rem; }
 h2 { font-size:1.02rem; }
+h3 { font-size:.9rem; }
 p { margin: .3rem 0 .8rem; }
 .muted { color: var(--muted); font-weight:400; }
 .num, td.num, .li-row strong { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
@@ -44,12 +47,17 @@ a { color: var(--brand-deep); }
 button { font-family: inherit; font-size:.83rem; cursor:pointer; border:1px solid var(--line); background: var(--panel); color: var(--ink); border-radius:5px; padding:.42rem .75rem; transition: background-color .12s ease, color .12s ease, border-color .12s ease; }
 button:hover { border-color: var(--brand); color: var(--brand-deep); }
 button.active { background: var(--brand); border-color: var(--brand); color:#fff; }
+button.primary { background: var(--brand); border-color: var(--brand); color:#fff; }
+button.primary:hover { background: var(--brand-deep); border-color: var(--brand-deep); color:#fff; }
 button.danger { color: var(--reject); }
 button.danger:hover { border-color: var(--reject); color: var(--reject); }
 button.small { padding:.22rem .55rem; font-size:.75rem; }
+button.link { border:none; background:none; padding:0; color: var(--brand-deep); text-decoration:underline; font-size:.78rem; }
 button:disabled { opacity:.4; cursor:not-allowed; }
-input, select { font-family: inherit; font-size:.83rem; padding:.38rem .55rem; border:1px solid var(--line); border-radius:5px; background:#fff; color: var(--ink); }
-input:focus, select:focus, button:focus-visible { outline: 2px solid var(--brand); outline-offset:1px; }
+input, select, textarea { font-family: inherit; font-size:.83rem; padding:.38rem .55rem; border:1px solid var(--line); border-radius:5px; background:#fff; color: var(--ink); }
+textarea { resize:vertical; min-height:2.2rem; }
+input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--brand); outline-offset:1px; }
+input.invalid { border-color: var(--reject); background: var(--reject-tint); }
 label { font-size:.78rem; color: var(--muted); display:flex; flex-direction:column; gap:.2rem; }
 
 .topbar { display:flex; align-items:center; gap:1.3rem; background: var(--brand); color:#fff; padding:.65rem 1.25rem; flex-wrap:wrap; }
@@ -63,6 +71,14 @@ label { font-size:.78rem; color: var(--muted); display:flex; flex-direction:colu
 main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 
 .demo-note { background: var(--panel); border:1px solid var(--line); border-left:3px solid var(--brand); border-radius:4px; padding:.55rem .8rem; font-size:.83rem; }
+.toast { background: var(--ok-tint); border:1px solid var(--ok); color:#1F5C22; border-radius:5px; padding:.5rem .85rem; font-size:.84rem; margin-bottom:1rem; }
+.errorbox { background: var(--reject-tint); border:1px solid var(--reject); color:#7E2620; border-radius:5px; padding:.5rem .85rem; font-size:.82rem; margin:.5rem 0; }
+.errorbox ul { margin:.25rem 0 0; padding-left:1.1rem; }
+
+.section-head { display:flex; align-items:baseline; gap:.7rem; margin:1.6rem 0 .7rem; }
+.section-head h2 { margin:0; }
+.group-label { font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color: var(--muted); font-weight:600; margin:1.3rem 0 .5rem; }
+.group-label:first-child { margin-top:0; }
 
 .inst-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:.9rem; }
 .inst-card { display:flex; align-items:stretch; width:100%; text-align:left; border:1px solid var(--line); border-radius:6px; background: var(--panel); overflow:hidden; padding:0; font:inherit; color:inherit; }
@@ -86,7 +102,16 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 .tab { border-radius:0; border:none; border-bottom:2px solid transparent; background:none; padding:.4rem .2rem; margin-right:.9rem; }
 .tab:hover { border-color: var(--line); color: var(--brand-deep); }
 .tab.active { color: var(--brand-deep); border-bottom-color: var(--brand); font-weight:600; }
-.assay-title { margin-top:.2rem; }
+.assay-title { margin-top:.2rem; margin-bottom:.25rem; }
+.context-line { font-size:.79rem; color: var(--muted); margin:0 0 .8rem; font-family: var(--font-num); }
+.context-line .sep { opacity:.45; margin:0 .45rem; }
+
+.pill { display:inline-block; font-size:.7rem; font-weight:600; border-radius:3px; padding:.05rem .4rem; vertical-align:middle; }
+.pill-ok { background: var(--ok-tint); color: var(--ok); }
+.pill-soon { background: var(--warning-tint); color: var(--warning); }
+.pill-expired { background: var(--reject-tint); color: var(--reject); }
+.pill-override { background: var(--brand-tint); color: var(--brand-deep); }
+.pill-shared { background: var(--band-outer); color: var(--muted); }
 
 .level-panel { display:grid; grid-template-columns:190px 1fr; gap:1.1rem; border:1px solid var(--line); border-radius:6px; background: var(--panel); padding:1rem; margin-bottom:.55rem; }
 .level-info { display:flex; flex-direction:column; gap:.4rem; border-right:1px solid var(--line); padding-right:1rem; }
@@ -99,6 +124,8 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 .band-yellow { fill: var(--band-yellow); }
 .band-green { fill: var(--band-green); }
 .grid-line { stroke: var(--grid-line); stroke-width:1; }
+.lot-divider { stroke: var(--brand-deep); stroke-width:1.2; stroke-dasharray:3 3; opacity:.7; }
+.lot-divider-label { font-family: var(--font-num); font-size:8px; fill: var(--brand-deep); }
 .lj-line { stroke: var(--line-color); stroke-width:1.4; fill:none; }
 .lj-dot { stroke:#fff; stroke-width:1; cursor:pointer; }
 .lj-hit { fill:transparent; cursor:pointer; }
@@ -106,12 +133,16 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 .dot-warning { fill: var(--warning); }
 .dot-reject { fill: var(--reject); }
 .select-box { fill:none; stroke: var(--select-outline); stroke-width:2; }
-.chart-footer { display:flex; align-items:center; gap:.6rem; margin-top:.5rem; min-height:1.6rem; }
-.detail-readout { font-size:.82rem; flex:1; }
+.chart-footer { display:flex; align-items:center; gap:.6rem; margin-top:.5rem; min-height:1.6rem; flex-wrap:wrap; }
+.detail-readout { font-size:.82rem; flex:1; min-width:220px; }
 .flag-pill { display:inline-block; font-size:.72rem; font-weight:600; border-radius:3px; padding:.06rem .42rem; margin-left:.3rem; }
 .flag-pill.sev-warning { background: var(--warning-tint); color: var(--warning); }
 .flag-pill.sev-reject { background: var(--reject-tint); color: var(--reject); }
 .flag-pill.sev-ok { background: var(--ok-tint); color: var(--ok); }
+.note-editor { border:1px solid var(--line); border-radius:5px; padding:.6rem .75rem; margin-top:.55rem; background: var(--paper); }
+.note-editor .row { display:flex; gap:.6rem; flex-wrap:wrap; align-items:flex-end; }
+.note-editor label { flex:1; min-width:180px; }
+.note-shown { font-size:.78rem; color: var(--muted); margin-top:.35rem; }
 .quick-add { display:flex; align-items:flex-end; gap:.6rem; margin-top:.65rem; padding-top:.6rem; border-top:1px dashed var(--line); flex-wrap:wrap; }
 .empty-chart { padding:2.2rem 1rem; text-align:center; color: var(--muted); background: var(--band-outer); border-radius:4px; font-size:.85rem; }
 .empty-hint { color: var(--muted); }
@@ -120,38 +151,96 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 .violation-mini ul { margin:.35rem 0 0; padding-left:1.1rem; }
 .violation-mini li { margin-bottom:.1rem; }
 
-.v-controls { display:flex; gap:1.1rem; align-items:flex-end; margin-bottom:.8rem; }
+.v-controls { display:flex; gap:1.1rem; align-items:flex-end; margin-bottom:.8rem; flex-wrap:wrap; }
 .v-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
 .v-table th, .v-table td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); font-size:.81rem; }
 .v-table th { background: var(--paper); font-weight:600; }
+.v-table tr.clickable { cursor:pointer; }
 .sev-row-reject td { background: var(--reject-tint); }
 .sev-row-warning td { background: var(--warning-tint); }
+.v-detail td { background:#fff; }
+.v-detail-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:.35rem .9rem; font-size:.78rem; }
+.v-detail-grid div span { color: var(--muted); }
 
 .settings-card { border:1px solid var(--line); border-radius:6px; background:#fff; padding:1.05rem 1.15rem; margin-bottom:1.1rem; }
+.settings-card.accent { border-left:3px solid var(--brand); }
 .rule-grid { display:flex; flex-wrap:wrap; gap:.55rem 1.5rem; margin-top:.5rem; }
 .rule-toggle { flex-direction:row; align-items:center; gap:.4rem; font-size:.84rem; color: var(--ink); }
-.data-actions { display:flex; gap:.6rem; flex-wrap:wrap; margin:.5rem 0 .3rem; }
+.data-actions { display:flex; gap:.6rem; flex-wrap:wrap; margin:.5rem 0 .3rem; align-items:flex-end; }
 .instrument-settings { border-top:1px solid var(--line); padding-top:.9rem; margin-top:.9rem; }
 .instrument-settings:first-of-type { border-top:none; padding-top:0; margin-top:0; }
-.instrument-settings-head { display:flex; gap:.5rem; margin-bottom:.65rem; flex-wrap:wrap; }
+.instrument-settings-head { display:flex; gap:.5rem; margin-bottom:.4rem; flex-wrap:wrap; align-items:center; }
 .instrument-settings-head input { flex:1; min-width:160px; }
+.shared-note { font-size:.78rem; color: var(--muted); margin:.1rem 0 .5rem; display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
 .assay-settings { border:1px dashed var(--line); border-radius:5px; padding:.75rem; margin:.65rem 0; }
 .assay-settings-head { display:flex; gap:.5rem; margin-bottom:.55rem; align-items:center; flex-wrap:wrap; }
 .assay-settings-head input { min-width:120px; }
 .level-settings-row { display:flex; gap:.6rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:.45rem; }
 .level-settings-row > span:first-child { font-weight:600; align-self:center; min-width:1.4rem; }
 .level-settings-row input { max-width:130px; }
-.points-table-wrap { max-height:150px; overflow-y:auto; border:1px solid var(--line); border-radius:4px; margin:.3rem 0 .8rem; }
+.points-table-wrap { max-height:170px; overflow-y:auto; border:1px solid var(--line); border-radius:4px; margin:.3rem 0 .8rem; }
 .points-table { width:100%; border-collapse:collapse; font-size:.77rem; }
 .points-table th, .points-table td { padding:.28rem .55rem; border-bottom:1px solid var(--line); text-align:left; }
+.points-table tr.voided td { color: var(--muted); text-decoration: line-through; }
+.points-table tr.voided td.reason { text-decoration:none; font-style:italic; }
 .add-instrument-form, .add-assay-form { display:flex; gap:.55rem; margin-top:.7rem; flex-wrap:wrap; }
 
+/* shared control profile card */
+.profile-card { display:grid; grid-template-columns: 1fr auto; gap:1rem; align-items:start; }
+.profile-facts { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:.45rem 1.1rem; font-size:.81rem; margin-top:.5rem; }
+.profile-facts div span { color: var(--muted); display:block; font-size:.73rem; }
+.profile-facts div strong { font-family: var(--font-num); font-weight:600; }
+.profile-actions { display:flex; flex-direction:column; gap:.4rem; }
+.serial-list { font-family: var(--font-num); font-size:.78rem; color: var(--muted); }
+
+/* shared profile editor */
+.editor-head { display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; margin-bottom:.6rem; }
+.unsaved-badge { font-size:.72rem; font-weight:600; color: var(--warning); background: var(--warning-tint); border-radius:3px; padding:.08rem .45rem; }
+.editor-levels { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:.9rem; margin:.7rem 0 1rem; }
+.editor-level { border:1px solid var(--line); border-radius:5px; padding:.7rem .8rem; }
+.editor-level h3 { margin-bottom:.5rem; }
+.editor-level label { margin-bottom:.45rem; }
+.editor-level input { width:100%; }
+.target-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.target-table th, .target-table td { padding:.35rem .5rem; border-bottom:1px solid var(--line); text-align:left; }
+.target-table th { background: var(--paper); font-weight:600; font-size:.75rem; }
+.target-table input { width:100%; max-width:110px; }
+.target-table td.calc { font-family: var(--font-num); color: var(--muted); font-variant-numeric: tabular-nums; }
+.editor-actions { display:flex; gap:.6rem; margin-top:.9rem; align-items:center; flex-wrap:wrap; }
+.archived-lot { border:1px solid var(--line); border-radius:5px; padding:.6rem .8rem; margin-bottom:.5rem; font-size:.8rem; background: var(--paper); }
+.archived-lot strong { font-family: var(--font-num); }
+
+/* batch entry */
+.batch-head { display:flex; gap:.9rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:1rem; }
+.batch-instrument { border:1px solid var(--line); border-radius:6px; background:#fff; padding:.85rem 1rem; margin-bottom:.8rem; }
+.batch-instrument h3 { margin-bottom:.1rem; }
+.batch-serial { font-family: var(--font-num); font-size:.77rem; color: var(--muted); margin-bottom:.6rem; }
+.batch-grid { display:grid; grid-template-columns: 70px repeat(auto-fit, minmax(110px,1fr)); gap:.4rem .7rem; align-items:center; }
+.batch-grid .bh { font-size:.74rem; color: var(--muted); font-weight:600; }
+.batch-grid .blabel { font-weight:600; font-size:.82rem; }
+.batch-grid input { width:100%; }
+.batch-target { font-size:.68rem; color: var(--muted); font-family: var(--font-num); }
+.changelog-list { font-size:.78rem; color: var(--muted); max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:4px; padding:.5rem .7rem; }
+.changelog-list div { margin-bottom:.2rem; }
+
+/* print */
+.print-header { display:none; }
 @media print {
   .no-print { display:none !important; }
-  body { background:#fff; }
+  body { background:#fff; font-size:11pt; }
   main.view { max-width:none; padding:0; }
-  .level-panel { break-inside:avoid; border-color:#999; }
+  .print-header { display:block; border-bottom:2px solid #000; margin-bottom:.6rem; padding-bottom:.4rem; }
+  .print-header .ph-inst { font-size:13pt; font-weight:700; }
+  .print-header .ph-dept { font-size:10pt; }
+  .print-header .ph-title { font-size:11pt; font-weight:600; margin-top:.2rem; }
+  .print-header .ph-meta { font-size:8.5pt; color:#333; margin-top:.15rem; }
+  .level-panel { break-inside:avoid; page-break-inside:avoid; border-color:#999; }
   .inst-card { break-inside:avoid; }
+  .v-table { break-inside:auto; }
+  .v-table tr { break-inside:avoid; }
+  .settings-card { break-inside:avoid; }
+  .violation-mini { display:block !important; break-inside:avoid; }
+  a[href]:after { content:""; }
 }
 @media (max-width:720px) {
   .level-panel { grid-template-columns:1fr; }
@@ -159,6 +248,8 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
   .li-row { flex:1 1 45%; justify-content:flex-start; gap:.3rem; }
   main.view { padding:1rem; }
   .topbar { padding:.6rem .9rem; }
+  .profile-card { grid-template-columns:1fr; }
+  .profile-actions { flex-direction:row; flex-wrap:wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition:none !important; }
@@ -170,23 +261,43 @@ main.view { padding: 1.3rem 1.5rem 3.5rem; max-width:1180px; margin:0 auto; }
 <script>
 'use strict';
 
-/* ---------- helpers ---------- */
+/* ============================================================
+   MMC Pathology QC Dashboard
+   Data schema v2.
+
+   Key architectural rule:
+     Shared control MATERIAL/TARGETS  !=  shared instrument QC HISTORY.
+   The three EasyLyte Plus analyzers share one control profile
+   (control name, lot, expiry, target mean/SD per analyte/level).
+   Every analyzer keeps its OWN result points, z-scores, Westgard
+   evaluation, comments and corrective actions. Nothing in this
+   file may merge result arrays across instruments.
+   ============================================================ */
+
+/* ---------- generic helpers ---------- */
 function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
 function esc(s) { return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtNum(n) { return (typeof n==='number' && isFinite(n)) ? n.toFixed(2) : '—'; }
+function fmtNum(n, dp) { return (typeof n==='number' && isFinite(n)) ? n.toFixed(dp==null?2:dp) : '—'; }
+function num(v) { const n = parseFloat(v); return isFinite(n) ? n : null; }
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pad2(n) { return String(n).padStart(2,'0'); }
 function fmtDateTime(dt) {
   if (!dt) return '—';
   const d = new Date(dt);
   if (isNaN(d.getTime())) return dt;
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const pad = n => String(n).padStart(2,'0');
-  return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad2(d.getDate())} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+function fmtDate(ds) {
+  if (!ds) return '—';
+  const d = new Date(ds);
+  if (isNaN(d.getTime())) return ds;
+  return `${pad2(d.getDate())} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 function todayStr() { return new Date().toISOString().slice(0,10); }
+function nowISO() { return new Date().toISOString(); }
 function nowLocalInputValue() {
   const d = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 function clampZ(z) { if (z==null) return 0; return Math.max(-3.45, Math.min(3.45, z)); }
 function worstSeverity(flags) {
@@ -195,196 +306,483 @@ function worstSeverity(flags) {
 }
 function statusLabel(s) { return s==='reject' ? 'Reject — rule violated' : s==='warning' ? 'Warning' : 'In control'; }
 function safeFilename(s) { return String(s).replace(/[^\w\-]+/g,'_'); }
+function isValidDateStr(s) { if (!s) return false; const d = new Date(s); return !isNaN(d.getTime()); }
+function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+
+/* Days from today until a date string. Negative = already past. */
+function daysUntil(ds) {
+  if (!isValidDateStr(ds)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(ds); target.setHours(0,0,0,0);
+  return Math.round((target - today) / 86400000);
+}
+/* Expiry state used for the amber/red control-expiry indicators. */
+function expiryStatus(ds) {
+  const d = daysUntil(ds);
+  if (d === null) return { state:'none', days:null, label:'No expiry set' };
+  if (d < 0) return { state:'expired', days:d, label:'CONTROL EXPIRED' };
+  if (d <= 30) return { state:'soon', days:d, label:`Expires in ${d} day${d===1?'':'s'}` };
+  return { state:'ok', days:d, label:'In date' };
+}
+function expiryPill(ds) {
+  const st = expiryStatus(ds);
+  if (st.state==='none') return '';
+  const cls = st.state==='expired' ? 'pill-expired' : st.state==='soon' ? 'pill-soon' : 'pill-ok';
+  return `<span class="pill ${cls}">${esc(st.label)}</span>`;
+}
+/* Worst expiry state across a lot's levels — used for the summary card. */
+function lotExpiryState(lot) {
+  if (!lot) return { state:'none', label:'No active lot' };
+  const a = expiryStatus(lot.level1 && lot.level1.expiry);
+  const b = expiryStatus(lot.level2 && lot.level2.expiry);
+  const rank = { expired:3, soon:2, ok:1, none:0 };
+  return rank[a.state] >= rank[b.state] ? a : b;
+}
+function csvCell(v) {
+  const s = (v==null ? '' : String(v));
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+const INSTITUTION = 'Mardan Medical Complex';
+const DEPARTMENT = 'Pathology Department';
+const ELECTROLYTE_ANALYTES = ['Na+','K+','Cl-'];
 
 /* ---------- seed data ---------- */
-const SEED_DATA = { instruments: [
-  { id:'easylyte-58692', name:'EasyLyte Plus', serial:'58692-CNKC', assays: [
-    { name:'Na+', unit:'mmol/L', levels: [
-      { level:1, controlName:'Electrolyte Control', controlLot:'DEMO-LOT-01', expDate:'2027-12-31', mean:120.0, sd:1.5, points: [
-        {id:uid(), datetime:'2026-08-15T09:10', value:119.8},
-        {id:uid(), datetime:'2026-08-17T09:05', value:120.3},
-        {id:uid(), datetime:'2026-08-19T09:12', value:119.5},
-        {id:uid(), datetime:'2026-08-21T09:08', value:120.6},
-        {id:uid(), datetime:'2026-08-23T09:15', value:119.9},
-        {id:uid(), datetime:'2026-08-25T09:02', value:120.8},
-        {id:uid(), datetime:'2026-08-27T09:11', value:119.6},
-        {id:uid(), datetime:'2026-08-29T09:07', value:120.4},
-        {id:uid(), datetime:'2026-08-31T09:09', value:120.0},
-        {id:uid(), datetime:'2026-09-02T09:06', value:119.7},
-        {id:uid(), datetime:'2026-09-04T09:13', value:121.9},
-        {id:uid(), datetime:'2026-09-06T09:04', value:122.1},
-        {id:uid(), datetime:'2026-09-08T09:10', value:121.7},
-        {id:uid(), datetime:'2026-09-09T09:08', value:122.0},
-        {id:uid(), datetime:'2026-09-10T10:02', value:124.9},
-        {id:uid(), datetime:'2026-09-11T09:05', value:120.2},
-        {id:uid(), datetime:'2026-09-12T09:09', value:119.9}
-      ]},
-      { level:2, controlName:'Electrolyte Control', controlLot:'DEMO-LOT-01', expDate:'2027-12-31', mean:150.0, sd:2.0, points: [
-        {id:uid(), datetime:'2026-08-15T09:10', value:149.5},
-        {id:uid(), datetime:'2026-08-17T09:05', value:150.8},
-        {id:uid(), datetime:'2026-08-19T09:12', value:149.2},
-        {id:uid(), datetime:'2026-08-21T09:08', value:151.0},
-        {id:uid(), datetime:'2026-08-23T09:15', value:149.8},
-        {id:uid(), datetime:'2026-08-25T09:02', value:150.5},
-        {id:uid(), datetime:'2026-08-27T09:11', value:148.9},
-        {id:uid(), datetime:'2026-08-29T09:07', value:150.2},
-        {id:uid(), datetime:'2026-08-31T09:09', value:149.6},
-        {id:uid(), datetime:'2026-09-02T09:06', value:150.9},
-        {id:uid(), datetime:'2026-09-04T09:13', value:151.2},
-        {id:uid(), datetime:'2026-09-06T09:04', value:150.4},
-        {id:uid(), datetime:'2026-09-08T09:10', value:149.9},
-        {id:uid(), datetime:'2026-09-09T09:08', value:154.3},
-        {id:uid(), datetime:'2026-09-10T10:02', value:150.6},
-        {id:uid(), datetime:'2026-09-11T09:05', value:150.1},
-        {id:uid(), datetime:'2026-09-12T09:09', value:149.7}
-      ]}
-    ]},
-    { name:'K+', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
-    ]},
-    { name:'Cl-', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
-    ]}
-  ]},
-  { id:'easylyte-65711', name:'EasyLyte Plus', serial:'65711-CNKC', assays: [
-    { name:'Na+', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:120.0, sd:1.5, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:150.0, sd:2.0, points: [] }
-    ]},
-    { name:'K+', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
-    ]},
-    { name:'Cl-', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
-    ]}
-  ]},
-  { id:'easylyte-65955', name:'EasyLyte Plus', serial:'65955-CNKC', assays: [
-    { name:'Na+', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:120.0, sd:1.5, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:150.0, sd:2.0, points: [] }
-    ]},
-    { name:'K+', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:3.0, sd:0.15, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:5.5, sd:0.20, points: [] }
-    ]},
-    { name:'Cl-', unit:'mmol/L', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:80.0, sd:3.0, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:110.0, sd:3.5, points: [] }
-    ]}
-  ]},
-  { id:'sysmex-ca600', name:'Sysmex Coagulation Analyzer CA-600', serial:'CA-620-12250', assays: [
-    { name:'PT', unit:'sec', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:13.0, sd:0.5, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:24.0, sd:1.0, points: [] }
-    ]},
-    { name:'APTT', unit:'sec', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:30.0, sd:1.2, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:60.0, sd:2.5, points: [] }
-    ]},
-    { name:'Fibrinogen', unit:'mg/dL', levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:250, sd:15, points: [] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:100, sd:10, points: [] }
-    ]}
-  ]}
-]};
+function makeLevel(level) {
+  return { level:level, controlName:'', controlLot:'', expDate:'', mean:0, sd:0, points:[] };
+}
+function makeElectrolyteAssays() {
+  return ELECTROLYTE_ANALYTES.map(function (name) {
+    return { name: name, unit:'mmol/L', levels: [ makeLevel(1), makeLevel(2) ] };
+  });
+}
+
+function buildSeed() {
+  const lotId = 'lot-seed-01';
+  const seed = {
+    schemaVersion: 2,
+    institution: INSTITUTION,
+    department: DEPARTMENT,
+    /* Shared control configuration. Targets and lot details live here ONLY.
+       Result points never live here — they stay on each instrument. */
+    sharedControlProfiles: {
+      electrolyte: {
+        id: 'electrolyte',
+        label: 'Electrolyte Control',
+        activeLotId: lotId,
+        lots: [{
+          id: lotId,
+          controlName: 'Electrolyte Control',
+          level1: { lot:'DEMO-LOT-01', expiry:'2027-12-31' },
+          level2: { lot:'DEMO-LOT-01', expiry:'2027-12-31' },
+          analytes: {
+            'Na+': { level1:{mean:120.0, sd:1.5}, level2:{mean:150.0, sd:2.0} },
+            'K+':  { level1:{mean:3.0,   sd:0.15}, level2:{mean:5.5,  sd:0.20} },
+            'Cl-': { level1:{mean:80.0,  sd:3.0}, level2:{mean:110.0, sd:3.5} }
+          },
+          createdAt: nowISO(),
+          archivedAt: null,
+          note: 'Initial configuration'
+        }]
+      }
+    },
+    instruments: [
+      { id:'easylyte-58692', name:'EasyLyte Plus', serial:'58692-CNKC',
+        sharedProfile:'electrolyte', overrideEnabled:false, overrides:{}, assays: makeElectrolyteAssays() },
+      { id:'easylyte-65711', name:'EasyLyte Plus', serial:'65711-CNKC',
+        sharedProfile:'electrolyte', overrideEnabled:false, overrides:{}, assays: makeElectrolyteAssays() },
+      { id:'easylyte-65955', name:'EasyLyte Plus', serial:'65955-CNKC',
+        sharedProfile:'electrolyte', overrideEnabled:false, overrides:{}, assays: makeElectrolyteAssays() },
+      { id:'sysmex-ca600', name:'Sysmex Coagulation Analyzer CA-600', serial:'CA-620-12250',
+        sharedProfile:null, overrideEnabled:false, overrides:{}, assays: [
+          { name:'PT', unit:'sec', levels: [
+            Object.assign(makeLevel(1), { mean:13.0, sd:0.5 }),
+            Object.assign(makeLevel(2), { mean:24.0, sd:1.0 }) ] },
+          { name:'APTT', unit:'sec', levels: [
+            Object.assign(makeLevel(1), { mean:30.0, sd:1.2 }),
+            Object.assign(makeLevel(2), { mean:60.0, sd:2.5 }) ] },
+          { name:'Fibrinogen', unit:'mg/dL', levels: [
+            Object.assign(makeLevel(1), { mean:250, sd:15 }),
+            Object.assign(makeLevel(2), { mean:100, sd:10 }) ] }
+        ] }
+    ],
+    changeLog: []
+  };
+
+  /* Demo Na+ results on analyzer 58692 only, so the charts and the rule
+     engine are visible on first open. Deliberately NOT copied to the other
+     two analyzers — each instrument owns its own history. */
+  const demoL1 = [
+    ['2026-08-15T09:10',119.8],['2026-08-17T09:05',120.3],['2026-08-19T09:12',119.5],
+    ['2026-08-21T09:08',120.6],['2026-08-23T09:15',119.9],['2026-08-25T09:02',120.8],
+    ['2026-08-27T09:11',119.6],['2026-08-29T09:07',120.4],['2026-08-31T09:09',120.0],
+    ['2026-09-02T09:06',119.7],['2026-09-04T09:13',121.9],['2026-09-06T09:04',122.1],
+    ['2026-09-08T09:10',121.7],['2026-09-09T09:08',122.0],['2026-09-10T10:02',124.9],
+    ['2026-09-11T09:05',120.2],['2026-09-12T09:09',119.9]
+  ];
+  const demoL2 = [
+    ['2026-08-15T09:10',149.5],['2026-08-17T09:05',150.8],['2026-08-19T09:12',149.2],
+    ['2026-08-21T09:08',151.0],['2026-08-23T09:15',149.8],['2026-08-25T09:02',150.5],
+    ['2026-08-27T09:11',148.9],['2026-08-29T09:07',150.2],['2026-08-31T09:09',149.6],
+    ['2026-09-02T09:06',150.9],['2026-09-04T09:13',151.2],['2026-09-06T09:04',150.4],
+    ['2026-09-08T09:10',149.9],['2026-09-09T09:08',154.3],['2026-09-10T10:02',150.6],
+    ['2026-09-11T09:05',150.1],['2026-09-12T09:09',149.7]
+  ];
+  const lot = seed.sharedControlProfiles.electrolyte.lots[0];
+  const inst = seed.instruments[0];
+  const naAssay = inst.assays[0];
+  [[demoL1,0,'level1'],[demoL2,1,'level2']].forEach(function (spec) {
+    const rows = spec[0], li = spec[1], key = spec[2];
+    rows.forEach(function (r) {
+      naAssay.levels[li].points.push(makePoint({
+        datetime: r[0], value: r[1], operator: 'MLT',
+        profileId: 'electrolyte', lotId: lot.id, lotLabel: lot[key].lot,
+        mean: lot.analytes['Na+'][key].mean, sd: lot.analytes['Na+'][key].sd
+      }));
+    });
+  });
+  return seed;
+}
+
+/* A QC result point. mean/sd are SNAPSHOTS of the targets that applied when
+   the result was entered, so a later lot change never rewrites history. */
+function makePoint(o) {
+  return {
+    id: uid(),
+    datetime: o.datetime,
+    value: o.value,
+    operator: o.operator || '',
+    profileId: o.profileId || null,
+    lotId: o.lotId || null,
+    lotLabel: o.lotLabel || '',
+    mean: (typeof o.mean === 'number' && isFinite(o.mean)) ? o.mean : null,
+    sd: (typeof o.sd === 'number' && o.sd > 0) ? o.sd : null,
+    status: 'active',
+    comment: '',
+    correctiveAction: '',
+    resolution: '',
+    voidReason: '',
+    voidedAt: '',
+    createdAt: nowISO()
+  };
+}
 
 const DEFAULT_RULES = { r12s:true, r13s:true, r22s:true, r4s:true, r41s:true, rNx:true, rNxN:10, r7t:true };
 
-/* ---------- state ---------- */
-let state = { view:'overview', activeInstrumentId:null, activeAssayIndex:0, selected:null, violationFilter:'', violationSort:'desc', data:null, rules:null };
+/* ---------- app state (UI only — persisted data lives in state.data) ---------- */
+let state = {
+  view: 'overview',
+  activeInstrumentId: null,
+  activeAssayIndex: 0,
+  selected: null,          // { key, pointIndex }
+  noteEditor: null,        // { key, pointId }
+  violationFilter: '',
+  resolutionFilter: '',
+  violationSort: 'desc',
+  expandedViolation: null,
+  editingProfile: null,    // { profileId, mode:'edit'|'new', draft:{...}, dirty:false, errors:[] }
+  showArchivedLots: false,
+  batchDraft: null,        // { datetime, operator, values:{} }
+  toast: '',
+  data: null,
+  rules: null
+};
+
+const LS_DATA = 'mmc_qc_data_v1';   // key retained so existing saved data is picked up and migrated
+const LS_RULES = 'mmc_qc_rules_v1';
 
 function loadState() {
-  let data=null, rules=null;
+  let data = null, rules = null;
   try {
-    const d = localStorage.getItem('mmc_qc_data_v1');
+    const d = localStorage.getItem(LS_DATA);
     if (d) data = JSON.parse(d);
-    const r = localStorage.getItem('mmc_qc_rules_v1');
+    const r = localStorage.getItem(LS_RULES);
     if (r) rules = JSON.parse(r);
-  } catch(e) { console.warn('Could not read saved QC data', e); }
-  state.data = (data && Array.isArray(data.instruments)) ? data : JSON.parse(JSON.stringify(SEED_DATA));
-  state.rules = rules || Object.assign({}, DEFAULT_RULES);
+  } catch (e) { console.warn('Could not read saved QC data', e); }
+  if (data && Array.isArray(data.instruments)) {
+    state.data = migrateData(data);
+  } else {
+    state.data = buildSeed();
+  }
+  state.rules = Object.assign({}, DEFAULT_RULES, rules || {});
 }
 function saveState() {
   try {
-    localStorage.setItem('mmc_qc_data_v1', JSON.stringify(state.data));
-    localStorage.setItem('mmc_qc_rules_v1', JSON.stringify(state.rules));
-  } catch(e) { console.warn('Could not save QC data', e); }
+    localStorage.setItem(LS_DATA, JSON.stringify(state.data));
+    localStorage.setItem(LS_RULES, JSON.stringify(state.rules));
+  } catch (e) { console.warn('Could not save QC data', e); }
 }
 function renderAndSave() { saveState(); render(); }
+function flash(msg) { state.toast = msg; }
 
-function hasDemoData() {
-  const inst = state.data.instruments[0];
-  const lvl = inst && inst.assays[0] && inst.assays[0].levels[0];
-  return !!(lvl && lvl.controlLot === 'DEMO-LOT-01' && lvl.points.length > 0);
+/* ---------- migration (v1 -> v2), idempotent ---------- */
+function looksElectrolyte(inst) {
+  return /easylyte/i.test(inst.name || '');
+}
+function migrateData(data) {
+  /* Already v2: just normalise anything missing and return. */
+  if (data.schemaVersion === 2) return normaliseData(data);
+
+  const out = deepCopy(data);
+  out.schemaVersion = 2;
+  out.institution = out.institution || INSTITUTION;
+  out.department = out.department || DEPARTMENT;
+  out.changeLog = Array.isArray(out.changeLog) ? out.changeLog : [];
+
+  /* Build a shared electrolyte profile from whatever the old EasyLyte
+     entries already held, so nothing the lab typed in is lost. */
+  const electro = (out.instruments || []).filter(looksElectrolyte);
+  if (!out.sharedControlProfiles) out.sharedControlProfiles = {};
+  if (!out.sharedControlProfiles.electrolyte && electro.length) {
+    const lotId = 'lot-migrated-' + uid();
+    const analytes = {};
+    let controlName = '', l1 = { lot:'', expiry:'' }, l2 = { lot:'', expiry:'' };
+    electro.forEach(function (inst) {
+      (inst.assays || []).forEach(function (assay) {
+        (assay.levels || []).forEach(function (lvl) {
+          const key = 'level' + lvl.level;
+          if (!analytes[assay.name]) analytes[assay.name] = {};
+          /* first non-zero definition found wins as the shared target */
+          if (!analytes[assay.name][key] && (lvl.mean || lvl.sd)) {
+            analytes[assay.name][key] = { mean: lvl.mean || 0, sd: lvl.sd || 0 };
+          }
+          if (!controlName && lvl.controlName) controlName = lvl.controlName;
+          if (lvl.level === 1 && !l1.lot && lvl.controlLot) l1 = { lot: lvl.controlLot, expiry: lvl.expDate || '' };
+          if (lvl.level === 2 && !l2.lot && lvl.controlLot) l2 = { lot: lvl.controlLot, expiry: lvl.expDate || '' };
+        });
+      });
+    });
+    ELECTROLYTE_ANALYTES.forEach(function (a) {
+      if (!analytes[a]) analytes[a] = {};
+      if (!analytes[a].level1) analytes[a].level1 = { mean:0, sd:0 };
+      if (!analytes[a].level2) analytes[a].level2 = { mean:0, sd:0 };
+    });
+    out.sharedControlProfiles.electrolyte = {
+      id: 'electrolyte',
+      label: 'Electrolyte Control',
+      activeLotId: lotId,
+      lots: [{
+        id: lotId,
+        controlName: controlName || 'Electrolyte Control',
+        level1: l1, level2: l2,
+        analytes: analytes,
+        createdAt: nowISO(), archivedAt: null,
+        note: 'Created automatically from existing instrument settings during upgrade'
+      }]
+    };
+    out.changeLog.push({ at: nowISO(), action: 'migrate', detail: 'Upgraded to schema v2; shared electrolyte control profile created from existing EasyLyte settings.' });
+  }
+
+  const profile = out.sharedControlProfiles.electrolyte;
+  const activeLot = profile ? profile.lots.find(function (l) { return l.id === profile.activeLotId; }) : null;
+
+  (out.instruments || []).forEach(function (inst) {
+    if (inst.sharedProfile === undefined) inst.sharedProfile = (looksElectrolyte(inst) && profile) ? 'electrolyte' : null;
+    if (inst.overrideEnabled === undefined) inst.overrideEnabled = false;
+    if (!inst.overrides) inst.overrides = {};
+    (inst.assays || []).forEach(function (assay) {
+      (assay.levels || []).forEach(function (lvl) {
+        const key = 'level' + lvl.level;
+        lvl.points = (lvl.points || []).map(function (p) {
+          /* Stamp each historical point with the mean/SD that was in force for it,
+             so old charts keep their original context after any future lot change. */
+          const stamped = Object.assign({
+            id: p.id || uid(), operator:'', profileId:null, lotId:null, lotLabel:'',
+            mean:null, sd:null, status:'active', comment:'', correctiveAction:'',
+            resolution:'', voidReason:'', voidedAt:'', createdAt: nowISO()
+          }, p);
+          if (stamped.mean == null && isFinite(lvl.mean) && lvl.mean !== 0) stamped.mean = lvl.mean;
+          if (stamped.sd == null && lvl.sd > 0) stamped.sd = lvl.sd;
+          if (inst.sharedProfile === 'electrolyte' && activeLot) {
+            if (!stamped.profileId) stamped.profileId = 'electrolyte';
+            if (!stamped.lotId) stamped.lotId = activeLot.id;
+            if (!stamped.lotLabel) stamped.lotLabel = (activeLot[key] && activeLot[key].lot) || '';
+            const an = activeLot.analytes[assay.name];
+            if (stamped.mean == null && an && an[key]) stamped.mean = an[key].mean;
+            if (stamped.sd == null && an && an[key] && an[key].sd > 0) stamped.sd = an[key].sd;
+          }
+          return stamped;
+        });
+      });
+    });
+  });
+  return normaliseData(out);
 }
 
-/* ---------- Westgard engine ---------- */
-function evaluateLevel(points, mean, sd, rules) {
-  if (!sd) return points.map(p => Object.assign({}, p, { z:null, flags:[] }));
-  const zs = points.map(p => Object.assign({}, p, { z:(p.value-mean)/sd, flags:[] }));
-  for (let i=0;i<zs.length;i++) {
-    const z = zs[i].z;
-    if (rules.r13s && Math.abs(z) > 3) zs[i].flags.push({rule:'1-3s', severity:'reject'});
-    else if (rules.r12s && Math.abs(z) > 2) zs[i].flags.push({rule:'1-2s', severity:'warning'});
+/* Fill in any fields a hand-edited or partial file might be missing. */
+function normaliseData(data) {
+  data.schemaVersion = 2;
+  data.institution = data.institution || INSTITUTION;
+  data.department = data.department || DEPARTMENT;
+  if (!data.sharedControlProfiles) data.sharedControlProfiles = {};
+  if (!Array.isArray(data.changeLog)) data.changeLog = [];
+  (data.instruments || []).forEach(function (inst) {
+    if (!inst.id) inst.id = uid();
+    if (inst.sharedProfile === undefined) inst.sharedProfile = null;
+    if (inst.overrideEnabled === undefined) inst.overrideEnabled = false;
+    if (!inst.overrides) inst.overrides = {};
+    (inst.assays || []).forEach(function (assay) {
+      (assay.levels || []).forEach(function (lvl) {
+        if (!Array.isArray(lvl.points)) lvl.points = [];
+        lvl.points.forEach(function (p) {
+          if (!p.id) p.id = uid();
+          if (!p.status) p.status = 'active';
+          if (p.operator === undefined) p.operator = '';
+          if (p.comment === undefined) p.comment = '';
+          if (p.correctiveAction === undefined) p.correctiveAction = '';
+          if (p.resolution === undefined) p.resolution = '';
+        });
+      });
+    });
+  });
+  return data;
+}
 
-    if (rules.r22s && i>=1) {
-      if (z>2 && zs[i-1].z>2) zs[i].flags.push({rule:'2-2s', severity:'reject'});
-      if (z<-2 && zs[i-1].z<-2) zs[i].flags.push({rule:'2-2s', severity:'reject'});
+/* ---------- shared-profile helpers ---------- */
+function getSharedControlProfile(profileId) {
+  return (state.data.sharedControlProfiles && state.data.sharedControlProfiles[profileId]) || null;
+}
+function getActiveControlLot(profileId) {
+  const p = getSharedControlProfile(profileId);
+  if (!p || !p.lots || !p.lots.length) return null;
+  return p.lots.find(function (l) { return l.id === p.activeLotId; }) || p.lots[p.lots.length-1];
+}
+function getLotById(profileId, lotId) {
+  const p = getSharedControlProfile(profileId);
+  if (!p) return null;
+  return p.lots.find(function (l) { return l.id === lotId; }) || null;
+}
+function getArchivedLots(profileId) {
+  const p = getSharedControlProfile(profileId);
+  if (!p) return [];
+  return p.lots.filter(function (l) { return l.id !== p.activeLotId; })
+               .sort(function (a,b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+}
+function getElectrolyteInstruments() {
+  return state.data.instruments.filter(function (i) { return i.sharedProfile === 'electrolyte'; });
+}
+function getInstrument(id) {
+  return state.data.instruments.find(function (i) { return i.id === id; }) || null;
+}
+
+/* Resolve which control settings apply RIGHT NOW to one instrument/assay/level.
+   Priority: instrument override > shared profile > instrument's own fields. */
+function getApplicableQCSettings(inst, assayName, levelObj) {
+  const key = 'level' + levelObj.level;
+  if (inst.sharedProfile) {
+    const lot = getActiveControlLot(inst.sharedProfile);
+    if (lot) {
+      const an = lot.analytes && lot.analytes[assayName];
+      const lvlInfo = lot[key] || { lot:'', expiry:'' };
+      let mean = an && an[key] ? an[key].mean : null;
+      let sd = an && an[key] ? an[key].sd : null;
+      let source = 'shared';
+      const ov = inst.overrideEnabled && inst.overrides && inst.overrides[assayName] && inst.overrides[assayName][key];
+      if (ov && isFinite(ov.mean) && ov.sd > 0) { mean = ov.mean; sd = ov.sd; source = 'override'; }
+      return {
+        mean: mean, sd: sd, controlName: lot.controlName,
+        lot: lvlInfo.lot, expiry: lvlInfo.expiry,
+        source: source, profileId: inst.sharedProfile, lotId: lot.id
+      };
+    }
+  }
+  return {
+    mean: levelObj.mean, sd: levelObj.sd, controlName: levelObj.controlName,
+    lot: levelObj.controlLot, expiry: levelObj.expDate,
+    source: 'instrument', profileId: null, lotId: null
+  };
+}
+
+/* ---------- Westgard engine ----------
+   IMPORTANT: every function below receives points from ONE instrument,
+   ONE assay. Sequential rules must never see another analyzer's results. */
+
+/* z uses the point's own historical snapshot when present, so results entered
+   under a previous lot keep their original z even after the targets change. */
+function zFor(point, applicable) {
+  const mean = (typeof point.mean === 'number' && isFinite(point.mean)) ? point.mean : applicable.mean;
+  const sd = (typeof point.sd === 'number' && point.sd > 0) ? point.sd : applicable.sd;
+  if (!isFinite(mean) || !(sd > 0)) return null;
+  return { z: (point.value - mean) / sd, mean: mean, sd: sd };
+}
+
+function evaluateLevel(points, applicable, rules) {
+  const zs = points.map(function (p) {
+    const r = zFor(p, applicable);
+    return Object.assign({}, p, { z: r ? r.z : null, appliedMean: r ? r.mean : null, appliedSd: r ? r.sd : null, flags: [] });
+  });
+  for (let i=0; i<zs.length; i++) {
+    const z = zs[i].z;
+    if (z == null) continue;
+    if (rules.r13s && Math.abs(z) > 3) zs[i].flags.push({ rule:'1-3s', severity:'reject' });
+    else if (rules.r12s && Math.abs(z) > 2) zs[i].flags.push({ rule:'1-2s', severity:'warning' });
+
+    if (rules.r22s && i>=1 && zs[i-1].z != null) {
+      if (z>2 && zs[i-1].z>2) zs[i].flags.push({ rule:'2-2s', severity:'reject' });
+      if (z<-2 && zs[i-1].z<-2) zs[i].flags.push({ rule:'2-2s', severity:'reject' });
     }
     if (rules.r41s && i>=3) {
       const w = [zs[i-3].z, zs[i-2].z, zs[i-1].z, z];
-      if (w.every(v=>v>1)) zs[i].flags.push({rule:'4-1s', severity:'reject'});
-      if (w.every(v=>v<-1)) zs[i].flags.push({rule:'4-1s', severity:'reject'});
+      if (w.every(function (v) { return v != null && v>1; })) zs[i].flags.push({ rule:'4-1s', severity:'reject' });
+      if (w.every(function (v) { return v != null && v<-1; })) zs[i].flags.push({ rule:'4-1s', severity:'reject' });
     }
     if (rules.rNx) {
       const N = rules.rNxN || 10;
       if (i >= N-1) {
-        const w = zs.slice(i-N+1, i+1).map(p=>p.z);
-        if (w.every(v=>v>0)) zs[i].flags.push({rule:N+'-x', severity:'reject'});
-        if (w.every(v=>v<0)) zs[i].flags.push({rule:N+'-x', severity:'reject'});
+        const w = zs.slice(i-N+1, i+1).map(function (p) { return p.z; });
+        if (w.every(function (v) { return v != null && v>0; })) zs[i].flags.push({ rule:N+'-x', severity:'reject' });
+        if (w.every(function (v) { return v != null && v<0; })) zs[i].flags.push({ rule:N+'-x', severity:'reject' });
       }
     }
     if (rules.r7t && i>=6) {
-      const w = zs.slice(i-6, i+1).map(p=>p.value);
-      let inc=true, dec=true;
-      for (let k=1;k<w.length;k++) { if (!(w[k]>w[k-1])) inc=false; if (!(w[k]<w[k-1])) dec=false; }
-      if (inc||dec) zs[i].flags.push({rule:'7-T', severity:'reject'});
+      const w = zs.slice(i-6, i+1).map(function (p) { return p.value; });
+      let inc = true, dec = true;
+      for (let k=1; k<w.length; k++) { if (!(w[k]>w[k-1])) inc=false; if (!(w[k]<w[k-1])) dec=false; }
+      if (inc || dec) zs[i].flags.push({ rule:'7-T', severity:'reject' });
     }
   }
   return zs;
 }
 
-function evaluateWithinRun(levels, rules) {
+/* Within-run rules (R-4s, across-level 2-2s) compare the levels of the SAME
+   assay on the SAME instrument, run on the same calendar day. */
+function evaluateWithinRun(evalLevels, rules) {
   const byDate = {};
-  levels.forEach((lvl, li) => {
-    if (!lvl.sd) return;
-    lvl.points.forEach((p, pi) => {
-      const d = (p.datetime||'').slice(0,10);
+  evalLevels.forEach(function (lvl, li) {
+    lvl.points.forEach(function (p, pi) {
+      if (p.z == null) return;
+      const d = (p.datetime || '').slice(0,10);
       if (!d) return;
-      (byDate[d] = byDate[d] || []).push({ levelIndex:li, pointIndex:pi, z:(p.value-lvl.mean)/lvl.sd });
+      (byDate[d] = byDate[d] || []).push({ levelIndex:li, pointIndex:pi, z:p.z });
     });
   });
   const flags = [];
-  Object.values(byDate).forEach(entries => {
+  Object.keys(byDate).forEach(function (d) {
+    const entries = byDate[d];
     if (entries.length < 2) return;
     if (rules.r4s) {
-      let maxE=entries[0], minE=entries[0];
-      entries.forEach(e => { if (e.z>maxE.z) maxE=e; if (e.z<minE.z) minE=e; });
+      let maxE = entries[0], minE = entries[0];
+      entries.forEach(function (e) { if (e.z > maxE.z) maxE = e; if (e.z < minE.z) minE = e; });
       if (maxE.z - minE.z > 4) {
-        flags.push({levelIndex:maxE.levelIndex, pointIndex:maxE.pointIndex, rule:'R-4s', severity:'reject'});
-        flags.push({levelIndex:minE.levelIndex, pointIndex:minE.pointIndex, rule:'R-4s', severity:'reject'});
+        flags.push({ levelIndex:maxE.levelIndex, pointIndex:maxE.pointIndex, rule:'R-4s', severity:'reject' });
+        flags.push({ levelIndex:minE.levelIndex, pointIndex:minE.pointIndex, rule:'R-4s', severity:'reject' });
       }
     }
     if (rules.r22s) {
-      for (let a=0;a<entries.length;a++) {
-        for (let b=a+1;b<entries.length;b++) {
+      for (let a=0; a<entries.length; a++) {
+        for (let b=a+1; b<entries.length; b++) {
+          if (entries[a].levelIndex === entries[b].levelIndex) continue;
           if ((entries[a].z>2 && entries[b].z>2) || (entries[a].z<-2 && entries[b].z<-2)) {
-            flags.push({levelIndex:entries[a].levelIndex, pointIndex:entries[a].pointIndex, rule:'2-2s (within-run)', severity:'reject'});
-            flags.push({levelIndex:entries[b].levelIndex, pointIndex:entries[b].pointIndex, rule:'2-2s (within-run)', severity:'reject'});
+            flags.push({ levelIndex:entries[a].levelIndex, pointIndex:entries[a].pointIndex, rule:'2-2s (within-run)', severity:'reject' });
+            flags.push({ levelIndex:entries[b].levelIndex, pointIndex:entries[b].pointIndex, rule:'2-2s (within-run)', severity:'reject' });
           }
         }
       }
@@ -393,74 +791,139 @@ function evaluateWithinRun(levels, rules) {
   return flags;
 }
 
+/* Full evaluation for one assay on ONE instrument.
+   Returns levels with evaluated point copies (voided results excluded). */
 function getEvaluatedAssay(inst, assayIndex) {
   const assay = inst.assays[assayIndex];
-  const sortedLevels = assay.levels.map(lvl => Object.assign({}, lvl, {
-    points: lvl.points.slice().sort((a,b)=> a.datetime.localeCompare(b.datetime))
-  }));
-  const evalLevels = sortedLevels.map(lvl => Object.assign({}, lvl, { points: evaluateLevel(lvl.points, lvl.mean, lvl.sd, state.rules) }));
-  const runFlags = evaluateWithinRun(sortedLevels, state.rules);
-  runFlags.forEach(f => {
+  if (!assay) return [];
+  const evalLevels = assay.levels.map(function (lvl) {
+    const applicable = getApplicableQCSettings(inst, assay.name, lvl);
+    const active = lvl.points
+      .filter(function (p) { return p.status !== 'voided'; })
+      .slice()
+      .sort(function (a,b) { return String(a.datetime).localeCompare(String(b.datetime)); });
+    return Object.assign({}, lvl, {
+      applicable: applicable,
+      points: evaluateLevel(active, applicable, state.rules)
+    });
+  });
+  const runFlags = evaluateWithinRun(evalLevels, state.rules);
+  runFlags.forEach(function (f) {
     const pt = evalLevels[f.levelIndex] && evalLevels[f.levelIndex].points[f.pointIndex];
-    if (pt) pt.flags.push({ rule:f.rule, severity:f.severity });
+    if (pt && !pt.flags.some(function (x) { return x.rule === f.rule; })) {
+      pt.flags.push({ rule:f.rule, severity:f.severity });
+    }
   });
   return evalLevels;
 }
 
+/* Per-instrument status for the overview cards. One analyzer's violation
+   must never change another analyzer's card. */
 function instrumentSummary(inst) {
-  let status = 'ok', count = 0;
-  inst.assays.forEach((assay, ai) => {
-    const evalLevels = getEvaluatedAssay(inst, ai);
-    evalLevels.forEach(lvl => {
-      lvl.points.forEach((p, pi) => {
+  let status = 'ok', count = 0, openIssues = 0;
+  inst.assays.forEach(function (assay, ai) {
+    getEvaluatedAssay(inst, ai).forEach(function (lvl) {
+      lvl.points.forEach(function (p, pi) {
         if (p.flags.length) {
           count += p.flags.length;
+          if (p.resolution !== 'Resolved') openIssues++;
           if (pi === lvl.points.length-1) {
             const worst = worstSeverity(p.flags);
-            if (worst==='reject') status='reject';
-            else if (worst==='warning' && status!=='reject') status='warning';
+            if (worst === 'reject') status = 'reject';
+            else if (worst === 'warning' && status !== 'reject') status = 'warning';
           }
         }
       });
     });
   });
-  return { status, count };
+  return { status: status, count: count, openIssues: openIssues };
 }
 
-/* ---------- chart ---------- */
+/* Flat violation records across every instrument, each carrying its own
+   serial number so the three identically named EasyLytes stay distinguishable. */
+function collectViolations() {
+  const rows = [];
+  state.data.instruments.forEach(function (inst) {
+    inst.assays.forEach(function (assay, ai) {
+      getEvaluatedAssay(inst, ai).forEach(function (lvl) {
+        lvl.points.forEach(function (p) {
+          p.flags.forEach(function (f) {
+            rows.push({
+              date: p.datetime, instrument: inst.name, serial: inst.serial,
+              instrumentId: inst.id, assay: assay.name, unit: assay.unit || '',
+              level: lvl.level, value: p.value, rule: f.rule, severity: f.severity,
+              controlName: lvl.applicable.controlName, lot: p.lotLabel || lvl.applicable.lot,
+              mean: p.appliedMean, sd: p.appliedSd, z: p.z,
+              operator: p.operator, comment: p.comment,
+              correctiveAction: p.correctiveAction,
+              resolution: p.resolution || 'Open',
+              pointId: p.id, assayIndex: ai
+            });
+          });
+        });
+      });
+    });
+  });
+  return rows;
+}
+
+function hasDemoData() {
+  const inst = getInstrument('easylyte-58692');
+  if (!inst) return false;
+  const lvl = inst.assays[0] && inst.assays[0].levels[0];
+  if (!lvl || !lvl.points.length) return false;
+  return lvl.points.some(function (p) { return p.lotLabel === 'DEMO-LOT-01'; });
+}
+function logChange(action, detail) {
+  state.data.changeLog.push({ at: nowISO(), action: action, detail: detail });
+  if (state.data.changeLog.length > 500) state.data.changeLog = state.data.changeLog.slice(-500);
+}
+
+/* ---------- Levey-Jennings chart ----------
+   Plotted in SD units, so points carrying different historical mean/SD
+   (different control lots) still share one chart correctly. */
 function buildChartSVG(key, offset, visiblePoints, selGlobalIndex) {
   const W=900, H=220, padL=42, padR=14, padT=10, padB=10;
   const plotW = W-padL-padR, plotH = H-padT-padB;
-  const yFor = z => padT + (3.5-z)/7*plotH;
+  const yFor = function (z) { return padT + (3.5-z)/7*plotH; };
   const n = visiblePoints.length;
-  const xFor = i => n<=1 ? padL+plotW/2 : padL + (i/(n-1))*plotW;
+  const xFor = function (i) { return n<=1 ? padL+plotW/2 : padL + (i/(n-1))*plotW; };
 
   const bands = [
     [3,3.5,'band-outer'], [2,3,'band-red'], [1,2,'band-yellow'],
     [-1,1,'band-green'], [-2,-1,'band-yellow'], [-3,-2,'band-red'], [-3.5,-3,'band-outer']
   ];
-  let s = `<svg viewBox="0 0 ${W} ${H}" class="lj-svg" preserveAspectRatio="xMidYMid meet">`;
-  bands.forEach(b => {
-    const lo=b[0], hi=b[1], cls=b[2];
-    const y1=yFor(hi), y2=yFor(lo);
-    s += `<rect x="${padL}" y="${y1.toFixed(1)}" width="${plotW}" height="${(y2-y1).toFixed(1)}" class="${cls}"></rect>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="lj-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Levey-Jennings chart">`;
+  bands.forEach(function (b) {
+    const y1 = yFor(b[1]), y2 = yFor(b[0]);
+    s += `<rect x="${padL}" y="${y1.toFixed(1)}" width="${plotW}" height="${(y2-y1).toFixed(1)}" class="${b[2]}"></rect>`;
   });
-  [-3,-2,-1,0,1,2,3].forEach(z => {
+  [-3,-2,-1,0,1,2,3].forEach(function (z) {
     const y = yFor(z);
     s += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" class="grid-line"></line>`;
     const label = z===0 ? 'Mean' : (z>0 ? '+'+z+'SD' : z+'SD');
     s += `<text x="${padL-5}" y="${(y+3).toFixed(1)}" text-anchor="end" class="lj-axis-label">${label}</text>`;
   });
+
+  /* Mark where the control lot changed, so a shift in targets is visible. */
+  for (let i=1; i<n; i++) {
+    if (visiblePoints[i].lotId && visiblePoints[i-1].lotId && visiblePoints[i].lotId !== visiblePoints[i-1].lotId) {
+      const x = (xFor(i-1) + xFor(i)) / 2;
+      s += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${(padT+plotH).toFixed(1)}" class="lot-divider"></line>`;
+      s += `<text x="${(x+3).toFixed(1)}" y="${(padT+9).toFixed(1)}" class="lot-divider-label">new lot</text>`;
+    }
+  }
+
   if (n>1) {
-    const pts = visiblePoints.map((p,i)=>`${xFor(i).toFixed(1)},${yFor(clampZ(p.z)).toFixed(1)}`).join(' ');
+    const pts = visiblePoints.map(function (p,i) { return `${xFor(i).toFixed(1)},${yFor(clampZ(p.z)).toFixed(1)}`; }).join(' ');
     s += `<polyline points="${pts}" class="lj-line"></polyline>`;
   }
-  visiblePoints.forEach((p,i) => {
-    const x=xFor(i), y=yFor(clampZ(p.z));
+  visiblePoints.forEach(function (p,i) {
+    const x = xFor(i), y = yFor(clampZ(p.z));
     const gi = offset+i;
     const sev = worstSeverity(p.flags);
     const dotCls = sev==='reject' ? 'dot-reject' : sev==='warning' ? 'dot-warning' : 'dot-normal';
-    if (gi===selGlobalIndex) {
+    if (gi === selGlobalIndex) {
       s += `<rect x="${(x-8).toFixed(1)}" y="${(y-8).toFixed(1)}" width="16" height="16" class="select-box"></rect>`;
     }
     s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" class="lj-hit" data-action="select-point" data-key="${key}" data-point-index="${gi}"></circle>`;
@@ -470,18 +933,32 @@ function buildChartSVG(key, offset, visiblePoints, selGlobalIndex) {
   return s;
 }
 
-/* ---------- render ---------- */
+/* ---------- shell ---------- */
 function render() {
+  /* renderShell() consumes state.toast, which is then cleared so the
+     confirmation message shows once rather than on every later render. */
   document.getElementById('app').innerHTML = renderShell();
+  state.toast = '';
+}
+
+function printHeader(title, meta) {
+  return `<div class="print-header">
+    <div class="ph-inst">${esc(state.data.institution || INSTITUTION)}</div>
+    <div class="ph-dept">${esc(state.data.department || DEPARTMENT)}</div>
+    <div class="ph-title">${esc(title)}</div>
+    <div class="ph-meta">${esc(meta || '')}${meta?' &middot; ':''}Printed ${esc(fmtDateTime(new Date().toISOString()))}</div>
+  </div>`;
 }
 
 function renderShell() {
+  const toast = state.toast ? `<div class="toast no-print">${esc(state.toast)}</div>` : '';
   return `
     <header class="topbar no-print">
       <div class="brand">MMC Pathology — QC Dashboard</div>
       <nav class="tabs">
         <button data-action="set-view" data-view="overview" class="${state.view==='overview'?'active':''}">Overview</button>
         <button data-action="set-view" data-view="instrument" class="${state.view==='instrument'?'active':''}">Instruments</button>
+        <button data-action="set-view" data-view="batch" class="${state.view==='batch'?'active':''}">QC run entry</button>
         <button data-action="set-view" data-view="violations" class="${state.view==='violations'?'active':''}">Violations log</button>
         <button data-action="set-view" data-view="settings" class="${state.view==='settings'?'active':''}">Settings</button>
       </nav>
@@ -493,93 +970,155 @@ function renderShell() {
       </div>
     </header>
     <main class="view">
+      ${toast}
       ${state.view==='overview' ? renderOverview()
         : state.view==='instrument' ? renderInstrumentView()
+        : state.view==='batch' ? renderBatchView()
         : state.view==='violations' ? renderViolationsView()
+        : state.view==='printreport' ? renderPrintReport()
         : renderSettingsView()}
     </main>`;
+}
+
+/* ---------- overview ---------- */
+function instrumentCard(inst) {
+  const sum = instrumentSummary(inst);
+  return `
+    <button class="inst-card status-${sum.status}" data-action="open-instrument" data-instrument="${inst.id}">
+      <span class="inst-card-bar"></span>
+      <span class="inst-card-body">
+        <span class="inst-card-name">${esc(inst.name)}</span>
+        <span class="inst-card-serial">S/N ${esc(inst.serial)}</span>
+        <span class="inst-card-status">${statusLabel(sum.status)}</span>
+        <span class="inst-card-count">${sum.count} flagged result${sum.count===1?'':'s'} on record${sum.openIssues?` &middot; ${sum.openIssues} unresolved`:''}</span>
+      </span>
+    </button>`;
 }
 
 function renderOverview() {
   if (!state.data.instruments.length) {
     return `<section><h1>Instrument overview</h1><p class="empty-hint">No instruments yet — add one in Settings.</p></section>`;
   }
-  const cards = state.data.instruments.map(inst => {
-    const sum = instrumentSummary(inst);
-    return `
-      <button class="inst-card status-${sum.status}" data-action="open-instrument" data-instrument="${inst.id}">
-        <span class="inst-card-bar"></span>
-        <span class="inst-card-body">
-          <span class="inst-card-name">${esc(inst.name)}</span>
-          <span class="inst-card-serial">S/N ${esc(inst.serial)}</span>
-          <span class="inst-card-status">${statusLabel(sum.status)}</span>
-          <span class="inst-card-count">${sum.count} flagged result${sum.count===1?'':'s'} on record</span>
-        </span>
-      </button>`;
-  }).join('');
+  const electro = getElectrolyteInstruments();
+  const others = state.data.instruments.filter(function (i) { return i.sharedProfile !== 'electrolyte'; });
+  const lot = getActiveControlLot('electrolyte');
+  const expState = lotExpiryState(lot);
+  const expBanner = (lot && (expState.state==='expired' || expState.state==='soon'))
+    ? `<div class="${expState.state==='expired'?'errorbox':'demo-note'}" style="margin-bottom:.9rem">
+         <strong>Electrolyte control lot ${esc(lot.level1.lot || '')}:</strong> ${esc(expState.label)}.
+       </div>` : '';
+
   return `
     <section class="overview">
+      ${printHeader('Quality Control — Instrument Overview')}
       <h1>Instrument overview</h1>
-      ${hasDemoData() ? `<p class="demo-note">Example Na+ results are loaded on the first EasyLyte Plus (58692-CNKC) so you can see the charts and rule engine working. Clear them anytime from Settings &rarr; Clear all QC results.</p>` : ''}
-      <div class="inst-grid">${cards}</div>
+      ${hasDemoData() ? `<p class="demo-note no-print">Example Na+ results are loaded on EasyLyte Plus 58692-CNKC so you can see the charts and rule engine working. Clear them anytime from Settings &rarr; Clear all QC results.</p>` : ''}
+      ${expBanner}
+      ${electro.length ? `
+        <div class="group-label">Electrolytes${lot?` &middot; ${esc(lot.controlName)} &middot; Lot ${esc(lot.level1.lot||'—')}`:''}</div>
+        <div class="inst-grid">${electro.map(instrumentCard).join('')}</div>
+        <div class="no-print" style="margin-top:.7rem"><button class="primary" data-action="set-view" data-view="batch">Enter Electrolyte QC Run</button></div>
+      ` : ''}
+      ${others.length ? `
+        <div class="group-label">Other analyzers</div>
+        <div class="inst-grid">${others.map(instrumentCard).join('')}</div>
+      ` : ''}
     </section>`;
 }
 
+/* ---------- instrument view ---------- */
 function renderInstrumentView() {
   if (!state.data.instruments.length) {
     return `<section><h1>Instruments</h1><p class="empty-hint">No instruments yet — add one in Settings.</p></section>`;
   }
-  if (!state.activeInstrumentId || !state.data.instruments.find(i=>i.id===state.activeInstrumentId)) {
+  if (!state.activeInstrumentId || !getInstrument(state.activeInstrumentId)) {
     state.activeInstrumentId = state.data.instruments[0].id;
   }
-  const inst = state.data.instruments.find(i=>i.id===state.activeInstrumentId);
-  const instSelector = state.data.instruments.map(i =>
-    `<button data-action="select-instrument" data-instrument="${i.id}" class="chip ${i.id===inst.id?'active':''}">${esc(i.name)}<span class="chip-serial">${esc(i.serial)}</span></button>`
-  ).join('');
+  const inst = getInstrument(state.activeInstrumentId);
+  const instSelector = state.data.instruments.map(function (i) {
+    return `<button data-action="select-instrument" data-instrument="${i.id}" class="chip ${i.id===inst.id?'active':''}">${esc(i.name)}<span class="chip-serial">${esc(i.serial)}</span></button>`;
+  }).join('');
 
   if (state.activeAssayIndex >= inst.assays.length) state.activeAssayIndex = 0;
-  const assayTabs = inst.assays.map((a,idx) =>
-    `<button data-action="select-assay" data-assay="${idx}" class="tab ${idx===state.activeAssayIndex?'active':''}">${esc(a.name)}</button>`
-  ).join('');
+  const assayTabs = inst.assays.map(function (a,idx) {
+    return `<button data-action="select-assay" data-assay="${idx}" class="tab ${idx===state.activeAssayIndex?'active':''}">${esc(a.name)}</button>`;
+  }).join('');
 
   const assay = inst.assays[state.activeAssayIndex];
   const evalLevels = assay ? getEvaluatedAssay(inst, state.activeAssayIndex) : [];
-  const levelPanels = evalLevels.map(lvl => renderLevelPanel(inst, state.activeAssayIndex, lvl, assay.unit||'')).join('');
+  const levelPanels = evalLevels.map(function (lvl) {
+    return renderLevelPanel(inst, state.activeAssayIndex, lvl, assay.unit || '');
+  }).join('');
 
   return `
     <section class="instrument-view">
+      ${printHeader('Quality Control — Levey-Jennings Report',
+         `${inst.name} (S/N ${inst.serial})${assay?' — '+assay.name:''}`)}
       <div class="inst-selector no-print">${instSelector}</div>
       <h1>${esc(inst.name)} <span class="muted">S/N ${esc(inst.serial)}</span></h1>
       ${inst.assays.length ? `<div class="assay-tabs no-print">${assayTabs}</div>` : ''}
       ${assay ? `<h2 class="assay-title">${esc(assay.name)} ${assay.unit?`<span class="muted">(${esc(assay.unit)})</span>`:''}</h2>` : ''}
+      ${assay ? renderContextLine(inst, assay, evalLevels) : ''}
       ${assay ? levelPanels : '<p class="empty-hint">No assays configured for this instrument yet — add one in Settings.</p>'}
     </section>`;
+}
+
+/* Compact "which control am I looking at" line under the assay heading. */
+function renderContextLine(inst, assay, evalLevels) {
+  if (!evalLevels.length) return '';
+  const a = evalLevels[0].applicable;
+  const parts = [];
+  if (a.controlName) parts.push('Control: ' + esc(a.controlName));
+  const lots = evalLevels.map(function (l) { return l.applicable.lot; }).filter(Boolean);
+  const uniqueLots = lots.filter(function (v,i,arr) { return arr.indexOf(v)===i; });
+  if (uniqueLots.length === 1) parts.push('Lot: ' + esc(uniqueLots[0]));
+  else if (uniqueLots.length > 1) parts.push('Lots: ' + uniqueLots.map(function (l,i) { return 'L'+(i+1)+' '+esc(l); }).join(' / '));
+  evalLevels.forEach(function (l) {
+    if (l.applicable.expiry) parts.push(`L${l.level} exp ${esc(fmtDate(l.applicable.expiry))}`);
+  });
+  const srcBadge = a.source==='override'
+    ? ' <span class="pill pill-override">Instrument override</span>'
+    : a.source==='shared' ? ' <span class="pill pill-shared">Shared configuration</span>' : '';
+  const worstExp = evalLevels.map(function (l) { return expiryStatus(l.applicable.expiry); })
+    .sort(function (x,y) { const r={expired:3,soon:2,ok:1,none:0}; return r[y.state]-r[x.state]; })[0];
+  const expBadge = (worstExp && (worstExp.state==='expired'||worstExp.state==='soon'))
+    ? ` <span class="pill ${worstExp.state==='expired'?'pill-expired':'pill-soon'}">${esc(worstExp.label)}</span>` : '';
+  if (!parts.length) return '';
+  return `<p class="context-line">${parts.join('<span class="sep">|</span>')}${srcBadge}${expBadge}</p>`;
 }
 
 function renderLevelPanel(inst, assayIndex, lvl, unit) {
   const key = inst.id + '|' + assayIndex + '|' + lvl.level;
   const sel = (state.selected && state.selected.key===key) ? state.selected.pointIndex : null;
   const points = lvl.points;
+  const a = lvl.applicable;
   const WINDOW = 25;
   const offset = Math.max(0, points.length - WINDOW);
   const visible = points.slice(offset);
-  const rangeLo = fmtNum(lvl.mean - 2*lvl.sd);
-  const rangeHi = fmtNum(lvl.mean + 2*lvl.sd);
+  const configured = isFinite(a.mean) && a.sd > 0;
+  const rangeLo = configured ? fmtNum(a.mean - 2*a.sd) : '—';
+  const rangeHi = configured ? fmtNum(a.mean + 2*a.sd) : '—';
   const selPoint = (sel!=null && points[sel]) ? points[sel] : null;
-  const violations = points.filter(p => p.flags && p.flags.length);
-  const chartHtml = lvl.sd ? buildChartSVG(key, offset, visible, sel) : `<div class="empty-chart">Set a mean and SD for this level in Settings to start plotting.</div>`;
+  const violations = points.filter(function (p) { return p.flags && p.flags.length; });
+  const chartHtml = configured
+    ? buildChartSVG(key, offset, visible, sel)
+    : `<div class="empty-chart">${inst.sharedProfile
+        ? 'No shared target set for this analyte/level yet — add Mean and SD in Settings &rarr; Electrolyte Control.'
+        : 'Set a mean and SD for this level in Settings to start plotting.'}</div>`;
 
   return `
   <div class="level-panel">
     <div class="level-info">
       <div class="li-row"><span>Level</span><strong>${lvl.level}</strong></div>
-      <div class="li-row"><span>Control</span><strong>${esc(lvl.controlName||'—')}</strong></div>
-      <div class="li-row"><span>Lot</span><strong>${esc(lvl.controlLot||'—')}</strong></div>
-      <div class="li-row"><span>Exp.</span><strong>${esc(lvl.expDate||'—')}</strong></div>
+      <div class="li-row"><span>Control</span><strong>${esc(a.controlName||'—')}</strong></div>
+      <div class="li-row"><span>Lot</span><strong>${esc(a.lot||'—')}</strong></div>
+      <div class="li-row"><span>Exp.</span><strong>${esc(a.expiry?fmtDate(a.expiry):'—')}</strong></div>
+      <div class="li-row"><span></span><span>${expiryPill(a.expiry)}</span></div>
       <div class="li-row"><span>N</span><strong class="num">${points.length}</strong></div>
-      <div class="li-row"><span>Mean</span><strong class="num">${fmtNum(lvl.mean)}</strong></div>
-      <div class="li-row"><span>SD</span><strong class="num">${fmtNum(lvl.sd)}</strong></div>
+      <div class="li-row"><span>Mean</span><strong class="num">${fmtNum(a.mean)}</strong></div>
+      <div class="li-row"><span>SD</span><strong class="num">${fmtNum(a.sd)}</strong></div>
       <div class="li-row"><span>Range (&plusmn;2SD)</span><strong class="num">${rangeLo}&ndash;${rangeHi}</strong></div>
+      ${a.source==='override' ? `<div class="li-row"><span></span><span class="pill pill-override">Instrument override</span></div>` : ''}
     </div>
     <div class="level-chart">
       ${chartHtml}
@@ -587,136 +1126,433 @@ function renderLevelPanel(inst, assayIndex, lvl, unit) {
         ${selPoint ? `
           <button data-action="step-point" data-dir="-1" ${sel<=0?'disabled':''}>&lsaquo; Prev</button>
           <div class="detail-readout"><strong>${fmtDateTime(selPoint.datetime)}</strong> &mdash; value ${selPoint.value} ${esc(unit)}
-            ${selPoint.flags.length ? selPoint.flags.map(f=>`<span class="flag-pill sev-${f.severity}">${esc(f.rule)}</span>`).join('') : '<span class="flag-pill sev-ok">In control</span>'}
+            ${selPoint.z!=null?`<span class="muted">(z ${selPoint.z>0?'+':''}${fmtNum(selPoint.z)})</span>`:''}
+            ${selPoint.operator?`<span class="muted">&middot; ${esc(selPoint.operator)}</span>`:''}
+            ${selPoint.flags.length ? selPoint.flags.map(function (f) { return `<span class="flag-pill sev-${f.severity}">${esc(f.rule)}</span>`; }).join('') : '<span class="flag-pill sev-ok">In control</span>'}
           </div>
           <button data-action="step-point" data-dir="1" ${sel>=points.length-1?'disabled':''}>Next &rsaquo;</button>
-        ` : `<div class="detail-readout">Click a point on the chart to see its date and value.</div>`}
+          <button data-action="open-note" data-key="${key}" data-point-id="${selPoint.id}">${selPoint.comment||selPoint.correctiveAction?'Edit note':'Add note'}</button>
+        ` : `<div class="detail-readout">Click a point on the chart to see its date, value and rule status.</div>`}
       </div>
+      ${selPoint && (selPoint.comment || selPoint.correctiveAction || selPoint.resolution) ? `
+        <div class="note-shown">
+          ${selPoint.resolution?`<strong>${esc(selPoint.resolution)}</strong> &middot; `:''}
+          ${selPoint.comment?esc(selPoint.comment):''}${selPoint.comment&&selPoint.correctiveAction?' &middot; ':''}
+          ${selPoint.correctiveAction?'Action: '+esc(selPoint.correctiveAction):''}
+        </div>` : ''}
+      ${renderNoteEditor(key, selPoint, inst.id, assayIndex, lvl.level)}
       <form class="quick-add no-print" data-action="quick-add" data-instrument="${inst.id}" data-assay="${assayIndex}" data-level="${lvl.level}">
         <label>Date/time <input type="datetime-local" name="dt" value="${nowLocalInputValue()}" required></label>
         <label>Value <input type="number" step="any" name="val" required></label>
+        <label>Operator <input type="text" name="op" placeholder="initials" size="6"></label>
         <button type="submit">Add result</button>
       </form>
     </div>
   </div>
   ${violations.length ? `
-  <div class="violation-mini no-print">
+  <div class="violation-mini">
     <strong>${violations.length} flagged result${violations.length===1?'':'s'} &mdash; Level ${lvl.level}</strong>
-    <ul>${violations.map(v=>`<li>${fmtDateTime(v.datetime)} &mdash; ${v.value} &mdash; ${v.flags.map(f=>esc(f.rule)).join(', ')}</li>`).join('')}</ul>
+    <ul>${violations.map(function (v) {
+      return `<li>${fmtDateTime(v.datetime)} &mdash; ${v.value} &mdash; ${v.flags.map(function (f) { return esc(f.rule); }).join(', ')}${v.resolution?` <em>(${esc(v.resolution)})</em>`:''}</li>`;
+    }).join('')}</ul>
   </div>` : ''}
   `;
 }
 
+function renderNoteEditor(key, selPoint, instId, assayIndex, levelNum) {
+  if (!state.noteEditor || state.noteEditor.key !== key || !selPoint || state.noteEditor.pointId !== selPoint.id) return '';
+  const statuses = ['','Open','Investigating','Resolved'];
+  return `
+    <form class="note-editor no-print" data-action="save-note" data-instrument="${instId}" data-assay="${assayIndex}" data-level="${levelNum}" data-point-id="${selPoint.id}">
+      <div class="row">
+        <label>Comment <input type="text" name="comment" value="${esc(selPoint.comment||'')}" placeholder="e.g. new reagent pack loaded"></label>
+        <label>Corrective action <input type="text" name="action" value="${esc(selPoint.correctiveAction||'')}" placeholder="e.g. recalibrated, repeated control"></label>
+        <label>Status <select name="resolution">${statuses.map(function (s) {
+          return `<option value="${s}" ${((selPoint.resolution||'')===s)?'selected':''}>${s||'— not set —'}</option>`;
+        }).join('')}</select></label>
+      </div>
+      <div class="editor-actions">
+        <button type="submit" class="primary">Save note</button>
+        <button type="button" data-action="cancel-note">Cancel</button>
+      </div>
+    </form>`;
+}
+
+/* ---------- batch electrolyte QC run entry ----------
+   One date/time and operator for the whole run; values are written into the
+   correct instrument/assay/level. Partial entry is allowed. */
+function ensureBatchDraft() {
+  if (!state.batchDraft) state.batchDraft = { datetime: nowLocalInputValue(), operator: '', values: {} };
+  return state.batchDraft;
+}
+function batchKey(instId, assayName, level) { return instId + '||' + assayName + '||' + level; }
+
+function renderBatchView() {
+  const electro = getElectrolyteInstruments();
+  if (!electro.length) {
+    return `<section><h1>QC run entry</h1><p class="empty-hint">No instruments are using the shared electrolyte configuration. Assign one in Settings.</p></section>`;
+  }
+  const draft = ensureBatchDraft();
+  const lot = getActiveControlLot('electrolyte');
+  const expState = lotExpiryState(lot);
+
+  const blocks = electro.map(function (inst) {
+    const analytes = inst.assays.map(function (a) { return a.name; });
+    const header = `<div class="bh"></div>` + analytes.map(function (n) { return `<div class="bh">${esc(n)}</div>`; }).join('');
+    const rows = [1,2].map(function (levelNum) {
+      const cells = inst.assays.map(function (assay) {
+        const lvl = assay.levels.find(function (l) { return l.level === levelNum; });
+        if (!lvl) return `<div class="muted">—</div>`;
+        const a = getApplicableQCSettings(inst, assay.name, lvl);
+        const k = batchKey(inst.id, assay.name, levelNum);
+        const target = (isFinite(a.mean) && a.sd>0) ? `${fmtNum(a.mean)} &plusmn; ${fmtNum(2*a.sd)}` : 'no target set';
+        return `<div>
+          <input type="number" step="any" data-action="batch-input" data-bkey="${k}" value="${draft.values[k]!=null?esc(draft.values[k]):''}" placeholder="${esc(assay.name)} L${levelNum}">
+          <div class="batch-target">${target}</div>
+        </div>`;
+      }).join('');
+      return `<div class="blabel">Level ${levelNum}</div>` + cells;
+    }).join('');
+    return `
+      <div class="batch-instrument">
+        <h3>${esc(inst.name)}</h3>
+        <div class="batch-serial">S/N ${esc(inst.serial)}</div>
+        <div class="batch-grid">${header}${rows}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <section class="batch-view">
+      <h1>Enter electrolyte QC run</h1>
+      <p class="muted">One date/time and operator for the whole run. Leave any field blank to skip it — nothing is required. Each value is stored against its own analyzer and evaluated separately.</p>
+      ${lot ? `<p class="context-line">Control: ${esc(lot.controlName)}<span class="sep">|</span>L1 lot ${esc(lot.level1.lot||'—')}<span class="sep">|</span>L2 lot ${esc(lot.level2.lot||'—')} ${expState.state==='expired'||expState.state==='soon'?`<span class="pill ${expState.state==='expired'?'pill-expired':'pill-soon'}">${esc(expState.label)}</span>`:''}</p>` : ''}
+      ${expState.state==='expired' ? `<div class="errorbox">The active control lot is past its expiry date. Results can still be recorded, but review the lot in Settings.</div>` : ''}
+      <div class="batch-head">
+        <label>Date &amp; time <input type="datetime-local" data-action="batch-datetime" value="${esc(draft.datetime)}"></label>
+        <label>Operator / technician <input type="text" data-action="batch-operator" value="${esc(draft.operator)}" placeholder="initials" size="8"></label>
+      </div>
+      ${blocks}
+      <div class="editor-actions">
+        <button class="primary" data-action="save-batch">Save QC run</button>
+        <button data-action="clear-batch">Clear form</button>
+      </div>
+    </section>`;
+}
+
+/* ---------- violations log ---------- */
 function renderViolationsView() {
-  const rows = [];
-  state.data.instruments.forEach(inst => {
-    inst.assays.forEach((assay, ai) => {
-      const evalLevels = getEvaluatedAssay(inst, ai);
-      evalLevels.forEach(lvl => {
-        lvl.points.forEach(p => {
-          p.flags.forEach(f => {
-            rows.push({ date:p.datetime, instrument:inst.name, assay:assay.name, level:lvl.level, value:p.value, rule:f.rule, severity:f.severity });
-          });
-        });
-      });
-    });
+  let rows = collectViolations();
+  rows.sort(function (a,b) {
+    return state.violationSort==='asc' ? String(a.date).localeCompare(String(b.date)) : String(b.date).localeCompare(String(a.date));
   });
-  rows.sort((a,b) => state.violationSort==='asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
-  const filtered = state.violationFilter ? rows.filter(r=>r.severity===state.violationFilter) : rows;
+  if (state.violationFilter) rows = rows.filter(function (r) { return r.severity === state.violationFilter; });
+  if (state.resolutionFilter) rows = rows.filter(function (r) { return (r.resolution||'Open') === state.resolutionFilter; });
+
+  const body = rows.map(function (r, i) {
+    const rowKey = r.instrumentId + '|' + r.assayIndex + '|' + r.level + '|' + r.pointId + '|' + r.rule;
+    const expanded = state.expandedViolation === rowKey;
+    let html = `<tr class="sev-row-${r.severity} clickable" data-action="toggle-violation" data-vkey="${esc(rowKey)}">
+      <td class="num">${fmtDateTime(r.date)}</td>
+      <td>${esc(r.instrument)}</td>
+      <td class="num">${esc(r.serial)}</td>
+      <td>${esc(r.assay)}</td>
+      <td class="num">L${r.level}</td>
+      <td class="num">${r.value}</td>
+      <td>${esc(r.rule)}</td>
+      <td><span class="flag-pill sev-${r.severity}">${r.severity}</span></td>
+      <td>${esc(r.resolution||'Open')}</td>
+    </tr>`;
+    if (expanded) {
+      html += `<tr class="v-detail"><td colspan="9">
+        <div class="v-detail-grid">
+          <div><span>Control</span>${esc(r.controlName||'—')}</div>
+          <div><span>Lot</span>${esc(r.lot||'—')}</div>
+          <div><span>Mean at time of testing</span>${fmtNum(r.mean)}</div>
+          <div><span>SD at time of testing</span>${fmtNum(r.sd)}</div>
+          <div><span>Z-score</span>${r.z!=null?(r.z>0?'+':'')+fmtNum(r.z):'—'}</div>
+          <div><span>Operator</span>${esc(r.operator||'—')}</div>
+          <div><span>Comment</span>${esc(r.comment||'—')}</div>
+          <div><span>Corrective action</span>${esc(r.correctiveAction||'—')}</div>
+        </div>
+        <div class="editor-actions no-print">
+          <button class="small" data-action="goto-violation" data-instrument="${r.instrumentId}" data-assay="${r.assayIndex}" data-level="${r.level}" data-point-id="${r.pointId}">Open on chart</button>
+        </div>
+      </td></tr>`;
+    }
+    return html;
+  }).join('');
 
   return `
     <section class="violations-view">
+      ${printHeader('Quality Control — Westgard Violations Log')}
       <h1>Violations log</h1>
       <div class="v-controls no-print">
-        <label>Filter
+        <label>Severity
           <select data-action="filter-violations">
             <option value="" ${!state.violationFilter?'selected':''}>All</option>
             <option value="reject" ${state.violationFilter==='reject'?'selected':''}>Reject only</option>
             <option value="warning" ${state.violationFilter==='warning'?'selected':''}>Warning only</option>
           </select>
         </label>
+        <label>Status
+          <select data-action="filter-resolution">
+            <option value="" ${!state.resolutionFilter?'selected':''}>All</option>
+            <option value="Open" ${state.resolutionFilter==='Open'?'selected':''}>Open</option>
+            <option value="Investigating" ${state.resolutionFilter==='Investigating'?'selected':''}>Investigating</option>
+            <option value="Resolved" ${state.resolutionFilter==='Resolved'?'selected':''}>Resolved</option>
+          </select>
+        </label>
         <button data-action="toggle-sort-violations">Sort: ${state.violationSort==='asc'?'Oldest first':'Newest first'}</button>
+        <button data-action="export-violations-csv">Export CSV</button>
       </div>
-      ${filtered.length ? `
+      ${rows.length ? `
       <table class="v-table">
-        <thead><tr><th>Date</th><th>Instrument</th><th>Assay</th><th>Level</th><th>Value</th><th>Rule</th><th>Severity</th></tr></thead>
-        <tbody>
-          ${filtered.map(r=>`<tr class="sev-row-${r.severity}">
-            <td class="num">${fmtDateTime(r.date)}</td>
-            <td>${esc(r.instrument)}</td>
-            <td>${esc(r.assay)}</td>
-            <td class="num">${r.level}</td>
-            <td class="num">${r.value}</td>
-            <td>${esc(r.rule)}</td>
-            <td><span class="flag-pill sev-${r.severity}">${r.severity}</span></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>` : `<p class="empty-hint">No Westgard rule violations recorded yet.</p>`}
+        <thead><tr><th>Date</th><th>Instrument</th><th>Serial No.</th><th>Assay</th><th>Level</th><th>Value</th><th>Rule</th><th>Severity</th><th>Status</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+      <p class="muted no-print" style="font-size:.78rem;margin-top:.5rem">Click any row for control lot, mean/SD in force at the time, z-score, operator and corrective action.</p>
+      ` : `<p class="empty-hint">No Westgard rule violations recorded${(state.violationFilter||state.resolutionFilter)?' for this filter':''}.</p>`}
     </section>`;
 }
 
+/* ---------- settings ---------- */
 function renderSettingsView() {
   const ruleDefs = [['r12s','1-2s (warning)'],['r13s','1-3s'],['r22s','2-2s'],['r4s','R-4s'],['r41s','4-1s'],['r7t','7-T (trend)']];
-  const ruleRows = ruleDefs.map(rd => `<label class="rule-toggle"><input type="checkbox" data-action="toggle-rule" data-rule="${rd[0]}" ${state.rules[rd[0]]?'checked':''}> ${rd[1]}</label>`).join('');
+  const ruleRows = ruleDefs.map(function (rd) {
+    return `<label class="rule-toggle"><input type="checkbox" data-action="toggle-rule" data-rule="${rd[0]}" ${state.rules[rd[0]]?'checked':''}> ${rd[1]}</label>`;
+  }).join('');
   const nRuleRow = `<label class="rule-toggle"><input type="checkbox" data-action="toggle-rule" data-rule="rNx" ${state.rules.rNx?'checked':''}> Same-side-of-mean rule, N =
-      <select data-action="set-rule-n">${[8,9,10,12].map(n=>`<option value="${n}" ${state.rules.rNxN===n?'selected':''}>${n}</option>`).join('')}</select></label>`;
-
-  const instrumentBlocks = state.data.instruments.map((inst) => renderInstrumentSettings(inst)).join('');
+      <select data-action="set-rule-n">${[8,9,10,12].map(function (n) { return `<option value="${n}" ${state.rules.rNxN===n?'selected':''}>${n}</option>`; }).join('')}</select></label>`;
 
   return `
     <section class="settings-view">
+      ${printHeader('Quality Control — Configuration Summary')}
       <h1>Settings</h1>
+
+      <h2 class="group-label">Shared QC configurations</h2>
+      ${renderSharedProfileSection()}
 
       <div class="settings-card">
         <h2>Westgard rules in use</h2>
-        <p class="muted">Turn rules on or off to match your lab's multirule protocol. The same-side rule (10-x by default) is an alternate run-length &mdash; most labs use one setting, not several at once.</p>
-        <div class="rule-grid">${ruleRows}${nRuleRow}</div>
+        <p class="muted">Turn rules on or off to match your lab's multirule protocol. The same-side rule (10-x by default) is an alternate run-length &mdash; most labs use one setting, not several at once. Rules are always evaluated per analyzer; results from different instruments are never combined.</p>
+        <div class="rule-grid no-print">${ruleRows}${nRuleRow}</div>
       </div>
 
-      <div class="settings-card">
+      <div class="settings-card no-print">
         <h2>Data</h2>
         <div class="data-actions">
           <button data-action="export-json">Export all data (JSON)</button>
           <button data-action="trigger-import">Import data (JSON)</button>
+          <button data-action="export-full-csv">Export all results (CSV)</button>
           <button data-action="clear-all-results" class="danger">Clear all QC results</button>
         </div>
-        <p class="muted">This dashboard has no server &mdash; <strong>Export</strong> regularly and commit the file to your GitHub repo, since clearing your browser data will otherwise clear this dashboard too.</p>
+        <div class="data-actions" style="border-top:1px dashed var(--line);padding-top:.7rem">
+          <label>From <input type="date" id="report-from" value="${esc(state.reportFrom||'')}"></label>
+          <label>To <input type="date" id="report-to" value="${esc(state.reportTo||'')}"></label>
+          <button data-action="export-electrolyte-report">Export electrolyte QC report (CSV)</button>
+          <button data-action="print-electrolyte-report">Print electrolyte QC report</button>
+        </div>
+        <p class="muted">This dashboard has no server &mdash; <strong>Export</strong> regularly and commit the file to your GitHub repo, since clearing your browser data will otherwise clear this dashboard too. Exports use schema v2; older backups are migrated automatically on import.</p>
       </div>
 
       <div class="settings-card">
         <h2>Instruments &amp; assays</h2>
-        ${instrumentBlocks}
-        <form class="add-instrument-form" data-action="add-instrument">
+        ${state.data.instruments.map(renderInstrumentSettings).join('')}
+        <form class="add-instrument-form no-print" data-action="add-instrument">
           <input type="text" name="name" placeholder="Instrument name" required>
           <input type="text" name="serial" placeholder="Serial number" required>
           <button type="submit">Add instrument</button>
         </form>
       </div>
+
+      ${state.data.changeLog && state.data.changeLog.length ? `
+      <div class="settings-card no-print">
+        <h2>Change history</h2>
+        <div class="changelog-list">
+          ${state.data.changeLog.slice().reverse().slice(0,60).map(function (c) {
+            return `<div><strong>${esc(fmtDateTime(c.at))}</strong> — ${esc(c.detail)}</div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
     </section>`;
 }
 
+function renderSharedProfileSection() {
+  const profile = getSharedControlProfile('electrolyte');
+  if (!profile) {
+    return `<div class="settings-card"><p class="empty-hint">No shared electrolyte configuration exists yet.</p></div>`;
+  }
+  if (state.editingProfile && state.editingProfile.profileId === 'electrolyte') return renderProfileEditor();
+
+  const lot = getActiveControlLot('electrolyte');
+  const insts = getElectrolyteInstruments();
+  const st = lotExpiryState(lot);
+  const archived = getArchivedLots('electrolyte');
+
+  const targetRows = ELECTROLYTE_ANALYTES.map(function (an) {
+    return [1,2].map(function (lv) {
+      const t = lot && lot.analytes[an] && lot.analytes[an]['level'+lv];
+      const mean = t ? t.mean : null, sd = t ? t.sd : null;
+      const configured = isFinite(mean) && sd > 0;
+      return `<tr>
+        <td>${esc(an)}</td><td class="num">L${lv}</td>
+        <td class="num">${configured?fmtNum(mean):'—'}</td>
+        <td class="num">${configured?fmtNum(sd):'—'}</td>
+        <td class="calc">${configured?fmtNum(mean-2*sd):'—'}</td>
+        <td class="calc">${configured?fmtNum(mean+2*sd):'—'}</td>
+      </tr>`;
+    }).join('');
+  }).join('');
+
+  return `
+    <div class="settings-card accent">
+      <div class="profile-card">
+        <div>
+          <h2>Electrolyte Control — EasyLyte Plus &times;${insts.length}</h2>
+          <div class="serial-list">${insts.map(function (i) { return esc(i.serial); }).join(' &nbsp;·&nbsp; ') || '—'}</div>
+          <div class="profile-facts">
+            <div><span>Control name</span><strong>${esc(lot?lot.controlName:'—')}</strong></div>
+            <div><span>Level 1 lot</span><strong>${esc(lot&&lot.level1.lot?lot.level1.lot:'—')}</strong></div>
+            <div><span>Level 1 expiry</span><strong>${lot?esc(fmtDate(lot.level1.expiry)):'—'}</strong> ${lot?expiryPill(lot.level1.expiry):''}</div>
+            <div><span>Level 2 lot</span><strong>${esc(lot&&lot.level2.lot?lot.level2.lot:'—')}</strong></div>
+            <div><span>Level 2 expiry</span><strong>${lot?esc(fmtDate(lot.level2.expiry)):'—'}</strong> ${lot?expiryPill(lot.level2.expiry):''}</div>
+            <div><span>Status</span><strong>${st.state==='expired'?'EXPIRED':'Active'}</strong></div>
+          </div>
+        </div>
+        <div class="profile-actions no-print">
+          <button data-action="edit-profile" data-profile="electrolyte">Edit configuration</button>
+          <button data-action="new-lot" data-profile="electrolyte">Create new lot</button>
+          <button data-action="toggle-archived">${state.showArchivedLots?'Hide':'View'} previous lots${archived.length?` (${archived.length})`:''}</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:1rem">Shared QC targets</h3>
+      <table class="target-table">
+        <thead><tr><th>Analyte</th><th>Level</th><th>Mean</th><th>SD</th><th>&minus;2SD</th><th>+2SD</th></tr></thead>
+        <tbody>${targetRows}</tbody>
+      </table>
+      <p class="muted" style="font-size:.78rem;margin-top:.5rem">Entered once and used by all ${insts.length} EasyLyte Plus analyzers. Each analyzer still keeps its own results and its own Westgard evaluation.</p>
+
+      ${state.showArchivedLots ? `
+        <h3 style="margin-top:1.1rem">Previous lots</h3>
+        ${archived.length ? archived.map(function (l) {
+          return `<div class="archived-lot">
+            <strong>${esc(l.level1.lot||l.level2.lot||'(no lot number)')}</strong> &mdash; ${esc(l.controlName)}<br>
+            <span class="muted">L1 exp ${esc(fmtDate(l.level1.expiry))} &middot; L2 exp ${esc(fmtDate(l.level2.expiry))} &middot; archived ${esc(fmtDate(l.archivedAt||l.createdAt))}</span><br>
+            <span class="muted">${ELECTROLYTE_ANALYTES.map(function (an) {
+              const t1 = l.analytes[an] && l.analytes[an].level1, t2 = l.analytes[an] && l.analytes[an].level2;
+              return `${esc(an)}: L1 ${t1?fmtNum(t1.mean)+'/'+fmtNum(t1.sd):'—'}, L2 ${t2?fmtNum(t2.mean)+'/'+fmtNum(t2.sd):'—'}`;
+            }).join(' &nbsp;|&nbsp; ')}</span>
+          </div>`;
+        }).join('') : `<p class="empty-hint">No previous lots yet.</p>`}
+      ` : ''}
+    </div>`;
+}
+
+/* Editor works on a draft copy — nothing is written until Save & Apply. */
+function renderProfileEditor() {
+  const ed = state.editingProfile;
+  const d = ed.draft;
+  const isNew = ed.mode === 'new';
+
+  const levelCards = [1,2].map(function (lv) {
+    const key = 'level'+lv;
+    return `
+      <div class="editor-level">
+        <h3>Level ${lv}</h3>
+        <label>Lot number <input type="text" data-action="draft-field" data-path="${key}.lot" value="${esc(d[key].lot||'')}"></label>
+        <label>Expiry date <input type="date" data-action="draft-field" data-path="${key}.expiry" value="${esc(d[key].expiry||'')}"></label>
+      </div>`;
+  }).join('');
+
+  const targetRows = ELECTROLYTE_ANALYTES.map(function (an, ai) {
+    return [1,2].map(function (lv) {
+      const key = 'level'+lv;
+      const t = (d.analytes[an] && d.analytes[an][key]) || { mean:'', sd:'' };
+      const meanVal = (t.mean===''||t.mean==null) ? '' : t.mean;
+      const sdVal = (t.sd===''||t.sd==null) ? '' : t.sd;
+      const m = num(meanVal), s = num(sdVal);
+      const ok = m!=null && s!=null && s>0;
+      return `<tr>
+        <td>${esc(an)}</td><td class="num">L${lv}</td>
+        <td><input type="number" step="any" data-action="draft-target" data-analyte="${esc(an)}" data-level="${key}" data-field="mean" value="${esc(meanVal)}"></td>
+        <td><input type="number" step="any" data-action="draft-target" data-analyte="${esc(an)}" data-level="${key}" data-field="sd" value="${esc(sdVal)}"></td>
+        <td class="calc" id="calc-${ai}-${lv}-lo">${ok?fmtNum(m-2*s):'—'}</td>
+        <td class="calc" id="calc-${ai}-${lv}-hi">${ok?fmtNum(m+2*s):'—'}</td>
+      </tr>`;
+    }).join('');
+  }).join('');
+
+  const insts = getElectrolyteInstruments();
+
+  return `
+    <div class="settings-card accent">
+      <div class="editor-head">
+        <h2 style="margin:0">${isNew?'Create new control lot':'Edit electrolyte control configuration'}</h2>
+        <span class="unsaved-badge" id="unsaved-badge" style="${ed.dirty?'':'display:none'}">Unsaved changes</span>
+      </div>
+      <p class="muted">${isNew
+        ? 'The current lot is kept and archived. Results already recorded keep the mean/SD of the lot they were run under.'
+        : 'Values are applied to all EasyLyte Plus analyzers when you press Save &amp; Apply. Nothing is saved while you type.'}</p>
+      ${ed.errors && ed.errors.length ? `<div class="errorbox"><strong>Fix before saving:</strong><ul>${ed.errors.map(function (e) { return `<li>${esc(e)}</li>`; }).join('')}</ul></div>` : ''}
+
+      <label style="max-width:320px">Control name <input type="text" data-action="draft-field" data-path="controlName" value="${esc(d.controlName||'')}"></label>
+      <div class="editor-levels">${levelCards}</div>
+      <p class="muted" style="font-size:.78rem;margin-top:-.5rem">Level 1 and Level 2 can carry different lot numbers and expiry dates.</p>
+
+      <h3>QC targets</h3>
+      <table class="target-table">
+        <thead><tr><th>Analyte</th><th>Level</th><th>Mean</th><th>SD</th><th>&minus;2SD</th><th>+2SD</th></tr></thead>
+        <tbody>${targetRows}</tbody>
+      </table>
+      <p class="muted" style="font-size:.78rem">&plusmn;1SD, &plusmn;2SD and &plusmn;3SD chart lines are calculated from Mean and SD. Leave both boxes blank for an analyte you have not set up yet.</p>
+
+      <div class="editor-actions">
+        <button class="primary" data-action="save-profile">Save &amp; apply to all ${insts.length} EasyLyte analyzers</button>
+        <button data-action="cancel-profile">Cancel</button>
+      </div>
+    </div>`;
+}
+
 function renderInstrumentSettings(inst) {
-  const assayBlocks = inst.assays.map((assay, ai) => {
-    const levelRows = assay.levels.map(lvl => {
-      const sortedPoints = lvl.points.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime));
-      const pointRows = sortedPoints.length ? sortedPoints.map(p=>`
-          <tr><td class="num">${fmtDateTime(p.datetime)}</td><td class="num">${p.value}</td>
-          <td><button class="small danger" data-action="remove-point" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-point-id="${p.id}">Remove</button></td></tr>
-        `).join('') : `<tr><td colspan="3" class="muted">No results yet &mdash; add one from the Instruments tab.</td></tr>`;
+  const shared = inst.sharedProfile === 'electrolyte';
+  const assayBlocks = inst.assays.map(function (assay, ai) {
+    const levelRows = assay.levels.map(function (lvl) {
+      const a = getApplicableQCSettings(inst, assay.name, lvl);
+      const sortedPoints = lvl.points.slice().sort(function (x,y) { return String(x.datetime).localeCompare(String(y.datetime)); });
+      const pointRows = sortedPoints.length ? sortedPoints.map(function (p) {
+        const voided = p.status === 'voided';
+        return `<tr class="${voided?'voided':''}">
+          <td class="num">${fmtDateTime(p.datetime)}</td>
+          <td class="num">${p.value}</td>
+          <td>${esc(p.operator||'')}</td>
+          <td class="reason">${voided?`voided — ${esc(p.voidReason||'no reason given')}`:''}</td>
+          <td>${voided?'':`<button class="small danger" data-action="void-point" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-point-id="${p.id}">Remove</button>`}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="5" class="muted">No results yet.</td></tr>`;
+
+      /* Shared instruments do not repeat control/lot/mean/SD entry. */
+      const settingsFields = shared
+        ? `<span class="muted" style="font-size:.78rem">Using shared Electrolyte Control configuration &mdash; ${esc(a.controlName||'—')}, lot ${esc(a.lot||'—')}, mean ${fmtNum(a.mean)}, SD ${fmtNum(a.sd)}${a.source==='override'?' <span class="pill pill-override">Instrument override</span>':''}</span>
+           ${inst.overrideEnabled ? `
+             <label>Override mean <input type="number" step="any" value="${esc(getOverrideVal(inst, assay.name, lvl.level, 'mean'))}" data-action="update-override" data-instrument="${inst.id}" data-assay-name="${esc(assay.name)}" data-level="${lvl.level}" data-field="mean"></label>
+             <label>Override SD <input type="number" step="any" value="${esc(getOverrideVal(inst, assay.name, lvl.level, 'sd'))}" data-action="update-override" data-instrument="${inst.id}" data-assay-name="${esc(assay.name)}" data-level="${lvl.level}" data-field="sd"></label>` : ''}`
+        : `<label>Control <input type="text" value="${esc(lvl.controlName||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlName"></label>
+           <label>Lot <input type="text" value="${esc(lvl.controlLot||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlLot"></label>
+           <label>Exp. <input type="date" value="${esc(lvl.expDate||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="expDate"></label>
+           <label>Mean <input type="number" step="any" value="${esc(lvl.mean)}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="mean"></label>
+           <label>SD <input type="number" step="any" value="${esc(lvl.sd)}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="sd"></label>`;
+
       return `
         <div class="level-settings-row">
           <span>L${lvl.level}</span>
-          <label>Control <input type="text" value="${esc(lvl.controlName||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlName"></label>
-          <label>Lot <input type="text" value="${esc(lvl.controlLot||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="controlLot"></label>
-          <label>Exp. <input type="date" value="${esc(lvl.expDate||'')}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="expDate"></label>
-          <label>Mean <input type="number" step="any" value="${lvl.mean}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="mean"></label>
-          <label>SD <input type="number" step="any" value="${lvl.sd}" data-action="update-level-field" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}" data-field="sd"></label>
-          <span class="muted">${lvl.points.length} results</span>
+          ${settingsFields}
+          <span class="muted">${lvl.points.filter(function (p) { return p.status!=='voided'; }).length} results</span>
           <button class="small" data-action="csv-export-level" data-instrument="${inst.id}" data-assay="${ai}" data-level="${lvl.level}">CSV</button>
         </div>
-        <div class="points-table-wrap"><table class="points-table"><thead><tr><th>Date/time</th><th>Value</th><th></th></tr></thead><tbody>${pointRows}</tbody></table></div>
-      `;
+        <div class="points-table-wrap"><table class="points-table"><thead><tr><th>Date/time</th><th>Value</th><th>Op.</th><th></th><th></th></tr></thead><tbody>${pointRows}</tbody></table></div>`;
     }).join('');
+
     return `
       <div class="assay-settings">
         <div class="assay-settings-head">
@@ -735,8 +1571,12 @@ function renderInstrumentSettings(inst) {
         <input type="text" value="${esc(inst.serial)}" data-action="update-instrument-field" data-instrument="${inst.id}" data-field="serial">
         <button class="small danger" data-action="remove-instrument" data-instrument="${inst.id}">Remove instrument</button>
       </div>
+      <div class="shared-note">
+        <label class="rule-toggle"><input type="checkbox" data-action="toggle-shared" data-instrument="${inst.id}" ${shared?'checked':''}> Uses shared Electrolyte Control configuration</label>
+        ${shared ? `<label class="rule-toggle"><input type="checkbox" data-action="toggle-override" data-instrument="${inst.id}" ${inst.overrideEnabled?'checked':''}> Use instrument-specific Mean/SD override</label>` : ''}
+      </div>
       ${assayBlocks}
-      <form class="add-assay-form" data-action="add-assay" data-instrument="${inst.id}">
+      <form class="add-assay-form no-print" data-action="add-assay" data-instrument="${inst.id}">
         <input type="text" name="name" placeholder="New assay name" required>
         <input type="text" name="unit" placeholder="unit">
         <button type="submit">Add assay</button>
@@ -744,177 +1584,642 @@ function renderInstrumentSettings(inst) {
     </div>`;
 }
 
-/* ---------- actions ---------- */
+function getOverrideVal(inst, assayName, levelNum, field) {
+  const o = inst.overrides && inst.overrides[assayName] && inst.overrides[assayName]['level'+levelNum];
+  return (o && o[field] != null) ? o[field] : '';
+}
+
+/* ---------- print report (all three EasyLyte analyzers, date range) ---------- */
+function renderPrintReport() {
+  const from = state.reportFrom || '', to = state.reportTo || '';
+  const insts = getElectrolyteInstruments();
+  const inRange = function (dt) {
+    const d = String(dt).slice(0,10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  };
+  const body = insts.map(function (inst) {
+    const assayBlocks = inst.assays.map(function (assay, ai) {
+      const levels = getEvaluatedAssay(inst, ai).map(function (lvl) {
+        const a = lvl.applicable;
+        const pts = lvl.points.filter(function (p) { return inRange(p.datetime); });
+        if (!pts.length) return '';
+        const configured = isFinite(a.mean) && a.sd > 0;
+        const key = inst.id + '|' + ai + '|' + lvl.level;
+        const viol = pts.filter(function (p) { return p.flags.length; });
+        return `
+          <div class="level-panel">
+            <div class="level-info">
+              <div class="li-row"><span>Assay</span><strong>${esc(assay.name)}</strong></div>
+              <div class="li-row"><span>Level</span><strong>${lvl.level}</strong></div>
+              <div class="li-row"><span>Control</span><strong>${esc(a.controlName||'—')}</strong></div>
+              <div class="li-row"><span>Lot</span><strong>${esc(a.lot||'—')}</strong></div>
+              <div class="li-row"><span>Exp.</span><strong>${esc(a.expiry?fmtDate(a.expiry):'—')}</strong></div>
+              <div class="li-row"><span>N</span><strong class="num">${pts.length}</strong></div>
+              <div class="li-row"><span>Mean</span><strong class="num">${fmtNum(a.mean)}</strong></div>
+              <div class="li-row"><span>SD</span><strong class="num">${fmtNum(a.sd)}</strong></div>
+              <div class="li-row"><span>Range (&plusmn;2SD)</span><strong class="num">${configured?fmtNum(a.mean-2*a.sd)+'–'+fmtNum(a.mean+2*a.sd):'—'}</strong></div>
+            </div>
+            <div class="level-chart">
+              ${configured ? buildChartSVG(key, 0, pts.slice(-40), null) : '<div class="empty-chart">No target configured</div>'}
+              ${viol.length ? `<div class="violation-mini"><strong>${viol.length} flagged result${viol.length===1?'':'s'}</strong><ul>${viol.map(function (v) {
+                return `<li>${fmtDateTime(v.datetime)} — ${v.value} — ${v.flags.map(function (f) { return esc(f.rule); }).join(', ')}${v.correctiveAction?' — action: '+esc(v.correctiveAction):''}</li>`;
+              }).join('')}</ul></div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      return levels;
+    }).join('');
+    if (!assayBlocks.trim()) return '';
+    return `<h2 style="margin-top:1rem">${esc(inst.name)} — S/N ${esc(inst.serial)}</h2>${assayBlocks}`;
+  }).join('');
+
+  const rangeLabel = (from||to) ? `${from?fmtDate(from):'start'} to ${to?fmtDate(to):'today'}` : 'all recorded results';
+  return `
+    <section>
+      ${printHeader('Electrolyte QC Report — EasyLyte Plus analyzers', 'Date range: ' + rangeLabel)}
+      <div class="no-print" style="margin-bottom:1rem">
+        <h1>Electrolyte QC report</h1>
+        <p class="muted">Date range: ${esc(rangeLabel)}. Use your browser's print dialog, then close this view.</p>
+        <button data-action="print-view">Print again</button>
+        <button data-action="set-view" data-view="settings">Back to settings</button>
+      </div>
+      ${body || '<p class="empty-hint">No results in this date range.</p>'}
+    </section>`;
+}
+
+/* ---------- validation ---------- */
+function validateControlProfile(d) {
+  const errors = [];
+  if (!String(d.controlName||'').trim()) errors.push('Control name is required.');
+  [1,2].forEach(function (lv) {
+    const key = 'level'+lv, L = d[key] || {};
+    if (L.lot != null && L.lot !== '' && !String(L.lot).trim()) errors.push(`Level ${lv} lot number cannot be only spaces.`);
+    if (L.expiry && !isValidDateStr(L.expiry)) errors.push(`Level ${lv} expiry date is not a valid date.`);
+  });
+  ELECTROLYTE_ANALYTES.forEach(function (an) {
+    [1,2].forEach(function (lv) {
+      const key = 'level'+lv;
+      const t = (d.analytes[an] && d.analytes[an][key]) || {};
+      const meanRaw = (t.mean===''||t.mean==null) ? '' : String(t.mean);
+      const sdRaw = (t.sd===''||t.sd==null) ? '' : String(t.sd);
+      if (meanRaw === '' && sdRaw === '') return;   // not configured yet — allowed
+      const m = num(meanRaw), s = num(sdRaw);
+      if (m === null) errors.push(`${an} L${lv}: mean must be a number.`);
+      if (s === null) errors.push(`${an} L${lv}: SD must be a number.`);
+      else if (!(s > 0)) errors.push(`${an} L${lv}: SD must be greater than 0.`);
+    });
+  });
+  return errors;
+}
+
+/* ---------- shared profile editing ---------- */
+function blankDraftFrom(lot) {
+  const d = lot ? deepCopy(lot) : {
+    controlName:'', level1:{lot:'',expiry:''}, level2:{lot:'',expiry:''}, analytes:{}
+  };
+  if (!d.analytes) d.analytes = {};
+  ELECTROLYTE_ANALYTES.forEach(function (an) {
+    if (!d.analytes[an]) d.analytes[an] = {};
+    [1,2].forEach(function (lv) {
+      const key = 'level'+lv;
+      if (!d.analytes[an][key]) d.analytes[an][key] = { mean:'', sd:'' };
+    });
+  });
+  if (!d.level1) d.level1 = { lot:'', expiry:'' };
+  if (!d.level2) d.level2 = { lot:'', expiry:'' };
+  return d;
+}
+function startEditProfile(profileId, mode) {
+  const lot = getActiveControlLot(profileId);
+  state.editingProfile = { profileId: profileId, mode: mode, draft: blankDraftFrom(lot), dirty: false, errors: [] };
+  if (mode === 'new') {
+    /* Start from current targets but force a fresh lot number entry. */
+    state.editingProfile.draft.level1.lot = '';
+    state.editingProfile.draft.level2.lot = '';
+  }
+  render();
+}
+function setDraftPath(path, value) {
+  const ed = state.editingProfile;
+  if (!ed) return;
+  const parts = path.split('.');
+  let o = ed.draft;
+  for (let i=0; i<parts.length-1; i++) o = o[parts[i]];
+  o[parts[parts.length-1]] = value;
+  ed.dirty = true;
+}
+
+/* Apply a draft to the shared profile.
+   mode 'edit'  -> corrects the ACTIVE lot in place (and the snapshots of
+                   results already recorded under that same lot).
+   mode 'new'   -> archives the current lot and starts a new one; existing
+                   results keep their original lot, mean and SD. */
+function applySharedElectrolyteProfile(profileId, draft, mode) {
+  const profile = getSharedControlProfile(profileId);
+  if (!profile) return 0;
+
+  const cleanAnalytes = {};
+  ELECTROLYTE_ANALYTES.forEach(function (an) {
+    cleanAnalytes[an] = {};
+    [1,2].forEach(function (lv) {
+      const key = 'level'+lv;
+      const t = (draft.analytes[an] && draft.analytes[an][key]) || {};
+      const m = num(t.mean), s = num(t.sd);
+      cleanAnalytes[an][key] = (m!=null && s!=null && s>0) ? { mean:m, sd:s } : { mean:0, sd:0 };
+    });
+  });
+
+  if (mode === 'new') {
+    const prev = getActiveControlLot(profileId);
+    if (prev) prev.archivedAt = nowISO();
+    const newLot = {
+      id: 'lot-' + uid(),
+      controlName: String(draft.controlName||'').trim(),
+      level1: { lot: String(draft.level1.lot||'').trim(), expiry: draft.level1.expiry||'' },
+      level2: { lot: String(draft.level2.lot||'').trim(), expiry: draft.level2.expiry||'' },
+      analytes: cleanAnalytes,
+      createdAt: nowISO(), archivedAt: null, note: ''
+    };
+    profile.lots.push(newLot);
+    profile.activeLotId = newLot.id;
+    logChange('new-lot', `New electrolyte control lot activated (L1 ${newLot.level1.lot||'—'} / L2 ${newLot.level2.lot||'—'}). Previous lot archived; existing results keep their original targets.`);
+    return getElectrolyteInstruments().length;
+  }
+
+  const lot = getActiveControlLot(profileId);
+  if (!lot) return 0;
+  lot.controlName = String(draft.controlName||'').trim();
+  lot.level1 = { lot: String(draft.level1.lot||'').trim(), expiry: draft.level1.expiry||'' };
+  lot.level2 = { lot: String(draft.level2.lot||'').trim(), expiry: draft.level2.expiry||'' };
+  lot.analytes = cleanAnalytes;
+
+  /* A correction to the active lot also corrects results recorded under it. */
+  getElectrolyteInstruments().forEach(function (inst) {
+    inst.assays.forEach(function (assay) {
+      assay.levels.forEach(function (lvl) {
+        const key = 'level'+lvl.level;
+        const t = cleanAnalytes[assay.name] && cleanAnalytes[assay.name][key];
+        lvl.points.forEach(function (p) {
+          if (p.lotId === lot.id && t && t.sd > 0) {
+            p.mean = t.mean; p.sd = t.sd; p.lotLabel = lot[key].lot;
+          }
+        });
+      });
+    });
+  });
+  logChange('edit-profile', `Electrolyte control configuration updated and applied to ${getElectrolyteInstruments().length} EasyLyte analyzers.`);
+  return getElectrolyteInstruments().length;
+}
+
+function saveProfile() {
+  const ed = state.editingProfile;
+  if (!ed) return;
+  const errors = validateControlProfile(ed.draft);
+  if (errors.length) { ed.errors = errors; render(); return; }
+  const count = applySharedElectrolyteProfile(ed.profileId, ed.draft, ed.mode);
+  state.editingProfile = null;
+  flash(`Electrolyte control settings applied to ${count} EasyLyte Plus analyzer${count===1?'':'s'}.`);
+  renderAndSave();
+}
+
+/* ---------- result entry / correction ---------- */
+function addResult(instId, assayIndex, levelNum, datetime, value, operator) {
+  const inst = getInstrument(instId);
+  if (!inst) return false;
+  const assay = inst.assays[assayIndex];
+  const lvl = assay.levels.find(function (l) { return l.level === levelNum; });
+  if (!lvl) return false;
+  const a = getApplicableQCSettings(inst, assay.name, lvl);
+  lvl.points.push(makePoint({
+    datetime: datetime, value: value, operator: operator,
+    profileId: a.profileId, lotId: a.lotId, lotLabel: a.lot,
+    mean: a.mean, sd: a.sd
+  }));
+  return true;
+}
+
+function voidPoint(instId, assayIdx, levelNum, pointId) {
+  const inst = getInstrument(instId);
+  const assay = inst.assays[assayIdx];
+  const lvl = assay.levels.find(function (l) { return l.level === levelNum; });
+  const p = lvl.points.find(function (x) { return x.id === pointId; });
+  if (!p) return;
+  const reason = window.prompt(
+    'Reason for removing this QC result (required).\nExamples: transcription error, wrong control level, duplicate entry, incorrect analyzer selected, other.',
+    ''
+  );
+  if (reason === null) return;
+  if (!String(reason).trim()) { alert('A reason is required to remove a QC result.'); return; }
+  p.status = 'voided';
+  p.voidReason = String(reason).trim();
+  p.voidedAt = nowISO();
+  logChange('void-result', `${inst.name} (${inst.serial}) ${assay.name} L${levelNum} — result ${p.value} of ${fmtDateTime(p.datetime)} removed. Reason: ${p.voidReason}`);
+  state.selected = null;
+  flash('QC result removed from charts and rule evaluation. The original value and your reason are kept in the record.');
+  renderAndSave();
+}
+
+function removeInstrument(instId) {
+  const inst = getInstrument(instId);
+  const label = inst ? `${inst.name} (${inst.serial})` : 'this instrument';
+  if (!confirm(`Remove ${label} and all its QC data? This cannot be undone.`)) return;
+  state.data.instruments = state.data.instruments.filter(function (i) { return i.id !== instId; });
+  if (state.activeInstrumentId === instId) state.activeInstrumentId = null;
+  logChange('remove-instrument', `Instrument removed: ${label}`);
+  renderAndSave();
+}
+function removeAssay(instId, assayIdx) {
+  if (!confirm('Remove this assay and all its QC data? This cannot be undone.')) return;
+  const inst = getInstrument(instId);
+  const name = inst.assays[assayIdx] ? inst.assays[assayIdx].name : '';
+  inst.assays.splice(assayIdx,1);
+  state.activeAssayIndex = 0;
+  logChange('remove-assay', `Assay removed: ${name} on ${inst.name} (${inst.serial})`);
+  renderAndSave();
+}
+function clearAllResults() {
+  if (!confirm('This removes every QC result from every instrument but keeps your instruments, assays and control configuration. Export a backup first if you want to keep the results. Continue?')) return;
+  state.data.instruments.forEach(function (inst) {
+    inst.assays.forEach(function (assay) { assay.levels.forEach(function (lvl) { lvl.points = []; }); });
+  });
+  state.selected = null;
+  logChange('clear-results', 'All QC results cleared by user.');
+  flash('All QC results cleared.');
+  renderAndSave();
+}
+
 function stepPoint(dir) {
   if (!state.selected) return;
   const parts = state.selected.key.split('|');
-  const inst = state.data.instruments.find(i=>i.id===parts[0]);
+  const inst = getInstrument(parts[0]);
   if (!inst) return;
   const evalLevels = getEvaluatedAssay(inst, parseInt(parts[1],10));
-  const lvl = evalLevels.find(l=>String(l.level)===parts[2]);
+  const lvl = evalLevels.find(function (l) { return String(l.level) === parts[2]; });
   if (!lvl) return;
   let ni = state.selected.pointIndex + dir;
   ni = Math.max(0, Math.min(lvl.points.length-1, ni));
   state.selected.pointIndex = ni;
+  state.noteEditor = null;
   render();
 }
-function removePoint(instId, assayIdx, levelNum, pointId) {
-  const inst = state.data.instruments.find(i=>i.id===instId);
-  const assay = inst.assays[assayIdx];
-  const lvl = assay.levels.find(l=>l.level===levelNum);
-  lvl.points = lvl.points.filter(p=>p.id!==pointId);
-  state.selected = null;
+
+/* ---------- batch save ---------- */
+function saveBatch() {
+  const draft = ensureBatchDraft();
+  if (!draft.datetime) { alert('Choose a date and time for this QC run.'); return; }
+  const bad = [];
+  const toAdd = [];
+  Object.keys(draft.values).forEach(function (k) {
+    const raw = draft.values[k];
+    if (raw === '' || raw == null) return;
+    const v = num(raw);
+    const parts = k.split('||');
+    if (v === null) { bad.push(parts[1] + ' L' + parts[2]); return; }
+    toAdd.push({ instId: parts[0], assayName: parts[1], level: parseInt(parts[2],10), value: v });
+  });
+  if (bad.length) { alert('These entries are not valid numbers: ' + bad.join(', ')); return; }
+  if (!toAdd.length) { alert('No values entered.'); return; }
+
+  let saved = 0;
+  const touched = {};
+  toAdd.forEach(function (item) {
+    const inst = getInstrument(item.instId);
+    if (!inst) return;
+    const ai = inst.assays.findIndex(function (a) { return a.name === item.assayName; });
+    if (ai < 0) return;
+    if (addResult(item.instId, ai, item.level, draft.datetime, item.value, draft.operator)) {
+      saved++; touched[inst.serial] = true;
+    }
+  });
+  logChange('batch-entry', `QC run ${fmtDateTime(draft.datetime)} — ${saved} result(s) entered across ${Object.keys(touched).length} analyzer(s)${draft.operator?' by '+draft.operator:''}.`);
+  state.batchDraft = { datetime: draft.datetime, operator: draft.operator, values: {} };
+  flash(`${saved} result${saved===1?'':'s'} saved across ${Object.keys(touched).length} analyzer${Object.keys(touched).length===1?'':'s'}. Westgard rules were evaluated separately for each.`);
   renderAndSave();
 }
-function removeInstrument(instId) {
-  const inst = state.data.instruments.find(i=>i.id===instId);
-  const label = inst ? `${inst.name} (${inst.serial})` : 'this instrument';
-  if (!confirm(`Remove ${label} and all its QC data? This can't be undone.`)) return;
-  state.data.instruments = state.data.instruments.filter(i=>i.id!==instId);
-  if (state.activeInstrumentId===instId) state.activeInstrumentId=null;
-  renderAndSave();
-}
-function removeAssay(instId, assayIdx) {
-  if (!confirm("Remove this assay and all its QC data? This can't be undone.")) return;
-  const inst = state.data.instruments.find(i=>i.id===instId);
-  inst.assays.splice(assayIdx,1);
-  state.activeAssayIndex = 0;
-  renderAndSave();
-}
-function clearAllResults() {
-  if (!confirm('This removes every QC result from every instrument but keeps your instruments, assays, and mean/SD settings. Export a backup first if you want to keep the results. Continue?')) return;
-  state.data.instruments.forEach(inst=>inst.assays.forEach(assay=>assay.levels.forEach(lvl=>{ lvl.points = []; })));
-  state.selected = null;
-  renderAndSave();
-}
+
+/* ---------- exports ---------- */
 function exportJSON() {
-  const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `mmc-qc-data-${todayStr()}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  state.data.schemaVersion = 2;
+  downloadBlob(JSON.stringify(state.data, null, 2), `mmc-qc-data-${todayStr()}.json`, 'application/json');
 }
 function handleImportFile(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(ev) {
+  reader.onload = function (ev) {
     try {
       const parsed = JSON.parse(ev.target.result);
-      if (!parsed || !Array.isArray(parsed.instruments)) throw new Error('This file does not look like QC dashboard data.');
-      state.data = parsed;
-      state.selected = null;
-      state.activeInstrumentId = null;
+      if (!parsed || !Array.isArray(parsed.instruments)) throw new Error('This file does not look like QC dashboard data (no instrument list found).');
+      const wasOld = parsed.schemaVersion !== 2;
+      state.data = migrateData(parsed);
+      state.selected = null; state.activeInstrumentId = null; state.editingProfile = null;
+      flash(wasOld ? 'Backup imported and upgraded to the current format. All QC results preserved.' : 'Backup imported.');
       renderAndSave();
-    } catch(err) {
+    } catch (err) {
       alert('Could not import this file: ' + err.message);
     }
   };
   reader.readAsText(file);
 }
+
+const FULL_CSV_HEADER = ['Institution','Department','Instrument','Serial No','Assay','Unit','Level','Date/Time',
+  'QC Value','Control Name','Control Lot','Expiry','Mean','SD','Z-Score','Westgard Flags','Severity',
+  'Operator','Comment','Corrective Action','Status','Record Status','Removal Reason'];
+
+function buildResultRows(filterFn) {
+  const rows = [];
+  state.data.instruments.forEach(function (inst) {
+    inst.assays.forEach(function (assay, ai) {
+      const evalLevels = getEvaluatedAssay(inst, ai);
+      evalLevels.forEach(function (lvl) {
+        const a = lvl.applicable;
+        lvl.points.forEach(function (p) {
+          if (filterFn && !filterFn(inst, assay, lvl, p)) return;
+          rows.push([
+            state.data.institution, state.data.department, inst.name, inst.serial, assay.name, assay.unit||'',
+            'L'+lvl.level, p.datetime, p.value, a.controlName||'', p.lotLabel||a.lot||'', a.expiry||'',
+            p.appliedMean!=null?p.appliedMean:'', p.appliedSd!=null?p.appliedSd:'',
+            p.z!=null?p.z.toFixed(3):'',
+            p.flags.map(function (f) { return f.rule; }).join(' '),
+            p.flags.length?worstSeverity(p.flags):'', p.operator||'', p.comment||'', p.correctiveAction||'',
+            p.resolution||'', 'active', ''
+          ]);
+        });
+      });
+      /* Voided results are excluded from charts and rule evaluation, but are
+         retained in exports (with reason) so the record stays traceable. */
+      assay.levels.forEach(function (lvl) {
+        lvl.points.filter(function (p) { return p.status === 'voided'; }).forEach(function (p) {
+          if (filterFn && !filterFn(inst, assay, lvl, p)) return;
+          rows.push([
+            state.data.institution, state.data.department, inst.name, inst.serial, assay.name, assay.unit||'',
+            'L'+lvl.level, p.datetime, p.value, '', p.lotLabel||'', '',
+            p.mean!=null?p.mean:'', p.sd!=null?p.sd:'', '', '', '',
+            p.operator||'', p.comment||'', p.correctiveAction||'', p.resolution||'', 'voided', p.voidReason||''
+          ]);
+        });
+      });
+    });
+  });
+  return rows;
+}
+function rowsToCSV(header, rows) {
+  return [header.map(csvCell).join(',')].concat(rows.map(function (r) { return r.map(csvCell).join(','); })).join('\n');
+}
+function exportFullCSV() {
+  downloadBlob(rowsToCSV(FULL_CSV_HEADER, buildResultRows(null)), `mmc-qc-all-results-${todayStr()}.csv`, 'text/csv');
+}
+function exportElectrolyteReport() {
+  const from = state.reportFrom || '', to = state.reportTo || '';
+  const rows = buildResultRows(function (inst, assay, lvl, p) {
+    if (inst.sharedProfile !== 'electrolyte') return false;
+    const d = String(p.datetime).slice(0,10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+  if (!rows.length) { alert('No electrolyte results in that date range.'); return; }
+  downloadBlob(rowsToCSV(FULL_CSV_HEADER, rows), `mmc-electrolyte-qc-${from||'start'}_to_${to||todayStr()}.csv`, 'text/csv');
+}
+function exportViolationsCSV() {
+  const header = ['Date/Time','Instrument','Serial No','Assay','Level','QC Value','Control','Lot','Mean','SD','Z-Score','Rule','Severity','Operator','Comment','Corrective Action','Status'];
+  const rows = collectViolations().map(function (r) {
+    return [r.date, r.instrument, r.serial, r.assay, 'L'+r.level, r.value, r.controlName||'', r.lot||'',
+            r.mean!=null?r.mean:'', r.sd!=null?r.sd:'', r.z!=null?r.z.toFixed(3):'', r.rule, r.severity,
+            r.operator||'', r.comment||'', r.correctiveAction||'', r.resolution||'Open'];
+  });
+  if (!rows.length) { alert('No violations to export.'); return; }
+  downloadBlob(rowsToCSV(header, rows), `mmc-qc-violations-${todayStr()}.csv`, 'text/csv');
+}
 function csvExportLevel(instId, assayIdx, levelNum) {
-  const inst = state.data.instruments.find(i=>i.id===instId);
+  const inst = getInstrument(instId);
   const assay = inst.assays[assayIdx];
-  const lvl = assay.levels.find(l=>l.level===levelNum);
-  const rows = [['Date/Time','Value']];
-  lvl.points.slice().sort((a,b)=>a.datetime.localeCompare(b.datetime)).forEach(p=>rows.push([p.datetime, p.value]));
-  const csv = rows.map(r=>r.join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${safeFilename(inst.name)}_${safeFilename(assay.name)}_L${levelNum}_${todayStr()}.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const rows = buildResultRows(function (i, a, l) {
+    return i.id === instId && a.name === assay.name && l.level === levelNum;
+  });
+  downloadBlob(rowsToCSV(FULL_CSV_HEADER, rows),
+    `${safeFilename(inst.serial)}_${safeFilename(assay.name)}_L${levelNum}_${todayStr()}.csv`, 'text/csv');
 }
 
 /* ---------- event delegation ---------- */
 function onAppClick(e) {
   const el = e.target.closest('[data-action]');
   if (!el) return;
-  const action = el.dataset.action;
-  if (action==='set-view') { state.view = el.dataset.view; render(); }
-  else if (action==='open-instrument') { state.activeInstrumentId = el.dataset.instrument; state.view='instrument'; state.activeAssayIndex=0; state.selected=null; render(); }
-  else if (action==='select-instrument') { state.activeInstrumentId = el.dataset.instrument; state.activeAssayIndex=0; state.selected=null; render(); }
-  else if (action==='select-assay') { state.activeAssayIndex = parseInt(el.dataset.assay,10); state.selected=null; render(); }
-  else if (action==='select-point') { state.selected = { key: el.dataset.key, pointIndex: parseInt(el.dataset.pointIndex,10) }; render(); }
-  else if (action==='step-point') { stepPoint(parseInt(el.dataset.dir,10)); }
-  else if (action==='export-json') { exportJSON(); }
-  else if (action==='trigger-import') { document.getElementById('import-file').click(); }
-  else if (action==='print-view') { window.print(); }
-  else if (action==='csv-export-level') { csvExportLevel(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10)); }
-  else if (action==='remove-point') { removePoint(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10), el.dataset.pointId); }
-  else if (action==='remove-instrument') { removeInstrument(el.dataset.instrument); }
-  else if (action==='remove-assay') { removeAssay(el.dataset.instrument, parseInt(el.dataset.assay,10)); }
-  else if (action==='clear-all-results') { clearAllResults(); }
-  else if (action==='toggle-sort-violations') { state.violationSort = state.violationSort==='asc' ? 'desc' : 'asc'; render(); }
+  const a = el.dataset.action;
+
+  if (a==='set-view') { state.view = el.dataset.view; state.expandedViolation=null; render(); }
+  else if (a==='open-instrument' || a==='select-instrument') {
+    state.activeInstrumentId = el.dataset.instrument;
+    if (a==='open-instrument') state.view='instrument';
+    state.activeAssayIndex = 0; state.selected = null; state.noteEditor = null; render();
+  }
+  else if (a==='select-assay') { state.activeAssayIndex = parseInt(el.dataset.assay,10); state.selected=null; state.noteEditor=null; render(); }
+  else if (a==='select-point') { state.selected = { key: el.dataset.key, pointIndex: parseInt(el.dataset.pointIndex,10) }; state.noteEditor=null; render(); }
+  else if (a==='step-point') { stepPoint(parseInt(el.dataset.dir,10)); }
+  else if (a==='open-note') { state.noteEditor = { key: el.dataset.key, pointId: el.dataset.pointId }; render(); }
+  else if (a==='cancel-note') { state.noteEditor = null; render(); }
+  else if (a==='export-json') { exportJSON(); }
+  else if (a==='trigger-import') { const f = document.getElementById('import-file'); if (f) f.click(); }
+  else if (a==='print-view') { window.print(); }
+  else if (a==='export-full-csv') { exportFullCSV(); }
+  else if (a==='export-violations-csv') { exportViolationsCSV(); }
+  else if (a==='export-electrolyte-report') { exportElectrolyteReport(); }
+  else if (a==='print-electrolyte-report') { state.view='printreport'; render(); setTimeout(function () { window.print(); }, 120); }
+  else if (a==='csv-export-level') { csvExportLevel(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10)); }
+  else if (a==='void-point') { voidPoint(el.dataset.instrument, parseInt(el.dataset.assay,10), parseInt(el.dataset.level,10), el.dataset.pointId); }
+  else if (a==='remove-instrument') { removeInstrument(el.dataset.instrument); }
+  else if (a==='remove-assay') { removeAssay(el.dataset.instrument, parseInt(el.dataset.assay,10)); }
+  else if (a==='clear-all-results') { clearAllResults(); }
+  else if (a==='toggle-sort-violations') { state.violationSort = state.violationSort==='asc'?'desc':'asc'; render(); }
+  else if (a==='toggle-violation') { const k = el.dataset.vkey; state.expandedViolation = (state.expandedViolation===k)?null:k; render(); }
+  else if (a==='goto-violation') {
+    const instId = el.dataset.instrument, ai = parseInt(el.dataset.assay,10);
+    const levelNum = parseInt(el.dataset.level,10), pid = el.dataset.pointId;
+    const inst = getInstrument(instId);
+    if (inst) {
+      const lvl = getEvaluatedAssay(inst, ai).find(function (l) { return l.level === levelNum; });
+      const idx = lvl ? lvl.points.findIndex(function (p) { return p.id === pid; }) : -1;
+      state.view='instrument'; state.activeInstrumentId=instId; state.activeAssayIndex=ai;
+      state.selected = idx>=0 ? { key: instId+'|'+ai+'|'+levelNum, pointIndex: idx } : null;
+      state.noteEditor = null; render();
+    }
+  }
+  else if (a==='edit-profile') { startEditProfile(el.dataset.profile, 'edit'); }
+  else if (a==='new-lot') { startEditProfile(el.dataset.profile, 'new'); }
+  else if (a==='save-profile') { saveProfile(); }
+  else if (a==='cancel-profile') {
+    if (state.editingProfile && state.editingProfile.dirty && !confirm('Discard unsaved changes to the control configuration?')) return;
+    state.editingProfile = null; render();
+  }
+  else if (a==='toggle-archived') { state.showArchivedLots = !state.showArchivedLots; render(); }
+  else if (a==='save-batch') { saveBatch(); }
+  else if (a==='clear-batch') { state.batchDraft = { datetime: nowLocalInputValue(), operator:'', values:{} }; render(); }
+}
+
+function onAppInput(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const a = el.dataset.action;
+
+  /* Draft edits update in memory only — no save, no re-render, focus preserved. */
+  if (a === 'draft-field') { setDraftPath(el.dataset.path, el.value); markDirty(); }
+  else if (a === 'draft-target') {
+    const ed = state.editingProfile; if (!ed) return;
+    const an = el.dataset.analyte, lv = el.dataset.level, f = el.dataset.field;
+    if (!ed.draft.analytes[an]) ed.draft.analytes[an] = {};
+    if (!ed.draft.analytes[an][lv]) ed.draft.analytes[an][lv] = { mean:'', sd:'' };
+    ed.draft.analytes[an][lv][f] = el.value;
+    ed.dirty = true; markDirty();
+    updateCalcCells(an, lv);
+  }
+  else if (a === 'batch-input') { ensureBatchDraft().values[el.dataset.bkey] = el.value; }
+  else if (a === 'batch-datetime') { ensureBatchDraft().datetime = el.value; }
+  else if (a === 'batch-operator') { ensureBatchDraft().operator = el.value; }
+}
+function markDirty() {
+  const b = document.getElementById('unsaved-badge');
+  if (b) b.style.display = '';
+}
+function updateCalcCells(analyte, levelKey) {
+  const ed = state.editingProfile; if (!ed) return;
+  const ai = ELECTROLYTE_ANALYTES.indexOf(analyte);
+  const lv = levelKey === 'level1' ? 1 : 2;
+  const t = ed.draft.analytes[analyte][levelKey];
+  const m = num(t.mean), s = num(t.sd);
+  const ok = m!=null && s!=null && s>0;
+  const lo = document.getElementById(`calc-${ai}-${lv}-lo`);
+  const hi = document.getElementById(`calc-${ai}-${lv}-hi`);
+  if (lo) lo.textContent = ok ? fmtNum(m-2*s) : '—';
+  if (hi) hi.textContent = ok ? fmtNum(m+2*s) : '—';
 }
 
 function onAppChange(e) {
   const t = e.target;
   if (t.id === 'import-file') { handleImportFile(t.files[0]); return; }
+  if (t.id === 'report-from') { state.reportFrom = t.value; return; }
+  if (t.id === 'report-to') { state.reportTo = t.value; return; }
 
   let el = t.closest('[data-action="update-level-field"]');
   if (el) {
-    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
+    const inst = getInstrument(el.dataset.instrument);
     const assay = inst.assays[parseInt(el.dataset.assay,10)];
-    const lvl = assay.levels.find(l=>l.level===parseInt(el.dataset.level,10));
+    const lvl = assay.levels.find(function (l) { return l.level === parseInt(el.dataset.level,10); });
     const field = el.dataset.field;
-    lvl[field] = (field==='mean'||field==='sd') ? (parseFloat(el.value)||0) : el.value;
-    renderAndSave();
-    return;
+    if (field === 'mean' || field === 'sd') {
+      const v = num(el.value);
+      if (v === null) { alert(`${field==='mean'?'Mean':'SD'} must be a number.`); render(); return; }
+      if (field === 'sd' && !(v > 0)) { alert('SD must be greater than 0.'); render(); return; }
+      lvl[field] = v;
+    } else if (field === 'expDate') {
+      if (el.value && !isValidDateStr(el.value)) { alert('Expiry must be a valid date.'); render(); return; }
+      lvl[field] = el.value;
+    } else {
+      lvl[field] = el.value;
+    }
+    renderAndSave(); return;
+  }
+  el = t.closest('[data-action="update-override"]');
+  if (el) {
+    const inst = getInstrument(el.dataset.instrument);
+    const an = el.dataset.assayName, lv = 'level'+el.dataset.level, f = el.dataset.field;
+    if (!inst.overrides[an]) inst.overrides[an] = {};
+    if (!inst.overrides[an][lv]) inst.overrides[an][lv] = {};
+    if (el.value === '') { delete inst.overrides[an][lv][f]; }
+    else {
+      const v = num(el.value);
+      if (v === null || (f === 'sd' && !(v > 0))) { alert(f==='sd' ? 'Override SD must be a number greater than 0.' : 'Override mean must be a number.'); render(); return; }
+      inst.overrides[an][lv][f] = v;
+    }
+    logChange('override', `${inst.name} (${inst.serial}) ${an} L${el.dataset.level} ${f} override set.`);
+    renderAndSave(); return;
   }
   el = t.closest('[data-action="update-assay-field"]');
   if (el) {
-    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
-    const assay = inst.assays[parseInt(el.dataset.assay,10)];
-    assay[el.dataset.field] = el.value;
-    renderAndSave();
-    return;
+    const inst = getInstrument(el.dataset.instrument);
+    inst.assays[parseInt(el.dataset.assay,10)][el.dataset.field] = el.value;
+    renderAndSave(); return;
   }
   el = t.closest('[data-action="update-instrument-field"]');
   if (el) {
-    const inst = state.data.instruments.find(i=>i.id===el.dataset.instrument);
+    const inst = getInstrument(el.dataset.instrument);
     inst[el.dataset.field] = el.value;
-    renderAndSave();
-    return;
+    renderAndSave(); return;
+  }
+  el = t.closest('[data-action="toggle-shared"]');
+  if (el) {
+    const inst = getInstrument(el.dataset.instrument);
+    if (el.checked) { inst.sharedProfile = 'electrolyte'; }
+    else {
+      /* Copy the values currently in force onto the instrument so nothing is lost. */
+      inst.assays.forEach(function (assay) {
+        assay.levels.forEach(function (lvl) {
+          const ap = getApplicableQCSettings(inst, assay.name, lvl);
+          lvl.controlName = ap.controlName||''; lvl.controlLot = ap.lot||''; lvl.expDate = ap.expiry||'';
+          if (isFinite(ap.mean)) lvl.mean = ap.mean;
+          if (ap.sd > 0) lvl.sd = ap.sd;
+        });
+      });
+      inst.sharedProfile = null; inst.overrideEnabled = false;
+    }
+    logChange('shared-link', `${inst.name} (${inst.serial}) ${el.checked?'linked to':'unlinked from'} the shared electrolyte configuration.`);
+    renderAndSave(); return;
+  }
+  el = t.closest('[data-action="toggle-override"]');
+  if (el) {
+    const inst = getInstrument(el.dataset.instrument);
+    inst.overrideEnabled = el.checked;
+    renderAndSave(); return;
   }
   el = t.closest('[data-action="toggle-rule"]');
   if (el) { state.rules[el.dataset.rule] = el.checked; renderAndSave(); return; }
   el = t.closest('[data-action="set-rule-n"]');
   if (el) { state.rules.rNxN = parseInt(el.value,10); renderAndSave(); return; }
   el = t.closest('[data-action="filter-violations"]');
-  if (el) { state.violationFilter = el.value; render(); return; }
+  if (el) { state.violationFilter = el.value; state.expandedViolation=null; render(); return; }
+  el = t.closest('[data-action="filter-resolution"]');
+  if (el) { state.resolutionFilter = el.value; state.expandedViolation=null; render(); return; }
 }
 
 function onAppSubmit(e) {
   const form = e.target;
   if (form.matches('[data-action="quick-add"]')) {
     e.preventDefault();
-    const instId = form.dataset.instrument, assayIdx = parseInt(form.dataset.assay,10), levelNum = parseInt(form.dataset.level,10);
-    const dt = form.elements['dt'].value, val = parseFloat(form.elements['val'].value);
-    if (!dt || isNaN(val)) return;
-    const inst = state.data.instruments.find(i=>i.id===instId);
-    const assay = inst.assays[assayIdx];
-    const lvl = assay.levels.find(l=>l.level===levelNum);
-    lvl.points.push({ id: uid(), datetime: dt, value: val });
-    state.selected = null;
+    const dt = form.elements['dt'].value;
+    const v = num(form.elements['val'].value);
+    if (!dt) { alert('Choose a date and time.'); return; }
+    if (v === null) { alert('QC result must be a number.'); return; }
+    addResult(form.dataset.instrument, parseInt(form.dataset.assay,10), parseInt(form.dataset.level,10), dt, v, form.elements['op'].value.trim());
+    state.selected = null; state.noteEditor = null;
+    renderAndSave();
+  } else if (form.matches('[data-action="save-note"]')) {
+    e.preventDefault();
+    const inst = getInstrument(form.dataset.instrument);
+    const assay = inst.assays[parseInt(form.dataset.assay,10)];
+    const lvl = assay.levels.find(function (l) { return l.level === parseInt(form.dataset.level,10); });
+    const p = lvl.points.find(function (x) { return x.id === form.dataset.pointId; });
+    if (p) {
+      p.comment = form.elements['comment'].value.trim();
+      p.correctiveAction = form.elements['action'].value.trim();
+      p.resolution = form.elements['resolution'].value;
+      logChange('note', `${inst.name} (${inst.serial}) ${assay.name} L${lvl.level} ${fmtDateTime(p.datetime)} — note/corrective action recorded${p.resolution?' ('+p.resolution+')':''}.`);
+    }
+    state.noteEditor = null;
     renderAndSave();
   } else if (form.matches('[data-action="add-instrument"]')) {
     e.preventDefault();
     const name = form.elements['name'].value.trim(), serial = form.elements['serial'].value.trim();
     if (!name) return;
-    state.data.instruments.push({ id: uid(), name, serial, assays: [] });
+    state.data.instruments.push({ id: uid(), name: name, serial: serial, sharedProfile: null, overrideEnabled: false, overrides: {}, assays: [] });
+    logChange('add-instrument', `Instrument added: ${name} (${serial})`);
     renderAndSave();
   } else if (form.matches('[data-action="add-assay"]')) {
     e.preventDefault();
-    const instId = form.dataset.instrument;
+    const inst = getInstrument(form.dataset.instrument);
     const name = form.elements['name'].value.trim(), unit = form.elements['unit'].value.trim();
     if (!name) return;
-    const inst = state.data.instruments.find(i=>i.id===instId);
-    inst.assays.push({ name, unit, levels: [
-      { level:1, controlName:'', controlLot:'', expDate:'', mean:0, sd:0, points:[] },
-      { level:2, controlName:'', controlLot:'', expDate:'', mean:0, sd:0, points:[] }
-    ]});
+    inst.assays.push({ name: name, unit: unit, levels: [ makeLevel(1), makeLevel(2) ] });
+    logChange('add-assay', `Assay added: ${name} on ${inst.name} (${inst.serial})`);
     renderAndSave();
   }
 }
@@ -922,9 +2227,11 @@ function onAppSubmit(e) {
 /* ---------- init ---------- */
 document.addEventListener('DOMContentLoaded', function () {
   loadState();
+  saveState();                       // persist the migrated structure immediately
   const app = document.getElementById('app');
   app.addEventListener('click', onAppClick);
   app.addEventListener('change', onAppChange);
+  app.addEventListener('input', onAppInput);
   app.addEventListener('submit', onAppSubmit);
   render();
 });
